@@ -1,6 +1,6 @@
 {
   "name": "@skill-manager/contract",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "private": true,
   "description": "skill-manager 跨层纯契约：结果类型、问题码、常量与纯结构类型",
   "type": "module",

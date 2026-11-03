@@ -762,19 +762,33 @@ T4 执行范围：六个动作均支持共享根整组与插件 `x-` 宿主。�
 
 ### 4.18 `pipeline run`
 
-**用途**：把一个问题按文档流水线处理为文档包（需求→调研→设计→计划→审批，按需加 UI 四件套）。
+**用途**：把一个问题按文档流水线处理为文档包（需求→调研→设计→计划→审批，按需加 UI 四件套）。默认使用内核自带的本地生成能力，不依赖任何外部服务。
 
-**语法**：`skill-manager pipeline run --problem <问题描述> --output-dir <目录> [--answers <问题=答案>...] [--experience <关键词>] [--json]`
+给出 `--probe-root` 时，内核会**只读**探查该仓库，把定位结果写进文档——这是「按模板产出」与「按真实代码处理」的分界线。
+
+**语法**：`skill-manager pipeline run --problem <问题描述> --output-dir <目录> [--answers <问题=答案>...] [--host <宿主>] [--experience <关键词>] [--probe-root <仓库路径> | --probe] [--json]`
 
 **前置条件**：`--problem` 与 `--output-dir` 必填；输出目录不存在时递归创建。
 
 **行为**：
 
-1. 按规则对问题分类（new-feature / bugfix / refactor / docs / research），检测是否涉及 UI；
-2. 生成流水线计划（基础五环节 + 按需 UI 四件套）；
-3. 若未传 `--answers`，返回 questionnaire-pending 结果，列出待回答的必填问题，不写任何文件；
-4. 若传 `--answers`，按 `q1=a1` 格式收集回答并收敛；
-5. 收敛后逐环节生成文档骨架，写入输出目录，每个环节一个 `<stage>.md`，外加 `INDEX.md` 索引。
+1. 按规则对问题分类（new-feature / bugfix / refactor / docs / research），检测是否涉及 UI；症状类描述（崩溃、报错、失败、超时、丢数据、很慢/卡顿等）一律归为 bugfix，改造意图（重构、迁移、性能优化）优先判为 refactor；
+2. 读取工作区 `experiences/` 的历史经验，按 `--host` / 环境特征识别出的宿主归纳画像；
+3. 生成流水线计划（基础五环节 + 按需 UI 四件套）；同类历史样本足够时，按「多数跳过」把环节降级为 skipped 并记录依据；
+4. 回答来源优先级：`--answers` > `--experience` 检索到的相似经验 > 宿主画像高频回答；
+5. **草案优先**：即使没有任何回答也会产出完整文档包，推断内容写入正文、未确认项写入「待确认问题」，不再阻塞在问卷待答状态；
+6. 逐环节生成文档（内置本地 provider 或 LLM provider），写入输出目录，每个环节一个 `<stage>.md`，外加 `INDEX.md` 索引；
+7. 本次处理自动累计一条经验（含宿主、环节计划与决策记录），供后续同类问题适配；探查过仓库时一并记下证据摘要；
+8. 传入 `--dry-run` 时只生成并返回计划载荷，不写输出目录、不记经验（`applied: false`）。
+
+**证据探查（`--probe-root` / `--probe`）**：
+
+- 只读：仅做 stat / readdir / readFile，**不建目录、不写缓存、不执行任何命令**；可在任意仓库上安全运行；
+- 有界：目录数、文件数、单文件读取字节数均有上限，不进入 `node_modules` / `.git` / 构建产物等目录；达到上限时在 `warnings` 中标注结论可能不完整；
+- 定位方式：把问题描述切成检索词（中文按受控词表最长匹配，英文标识符直接使用），展开成代码片段后在路径与文件内容中匹配，按命中位置（路径 / 正文 / 注释）、文件角色（实现 / 测试 / 文档 / 构建脚本）加权排序；
+- 产出写入文档：可疑文件清单（含命中词与行号）、相关测试、可执行检查命令、技术栈与扫描规模；
+- 降级：不指定探查根时完全不探查，文档中相关章节明确标注「未探查仓库，结论均为推断」并给出开启方式；路径不可访问时同样降级并记 `warnings`，不报错；
+- 证据缺失时**不编造**定位结果。
 
 **选项语义**：
 
@@ -782,18 +796,28 @@ T4 执行范围：六个动作均支持共享根整组与插件 `x-` 宿主。�
 |---|---|
 | `--problem` | 问题描述文本 |
 | `--output-dir` | 文档包输出目录，递归创建 |
-| `--answers <问题=答案>...` | 可重复，用于收敛需求追问 |
+| `--answers <问题=答案>...` | 可重复，显式回答（优先级最高） |
+| `--host <宿主>` | 经验画像归属宿主；缺省按 `SKILL_MANAGER_HOST` 与宿主环境特征识别，识别不到为 `unspecified` |
 | `--experience <关键词>` | 可选；按关键词检索历史经验，预填相似问题的问答 |
+| `--probe-root <路径>` | 探查该路径的仓库代码，把定位结果写进文档；只读，不执行命令 |
+| `--probe` | 未给 `--probe-root` 时探查当前目录 |
+| `--llm-provider <类型>` | `local`（默认）/ `doubao` / `claude` / 其他 OpenAI 兼容类型；`stub` 作为 `local` 的兼容别名 |
+| `--llm-api-key` | 外部 provider 的密钥；选择外部 provider 但缺密钥时退回内置本地生成 |
+| `--dry-run` | 预演：返回将要产出的文档路径与经验适配信息，不写文件、不记经验 |
 
-**输出载荷**：输出目录、文档路径列表、`experience_id`（本次自动累计的经验 id）、`experience_applied`（是否应用了相似经验）；未收敛时返回 `openQuestions` 与问卷状态。
+`--probe-root` 与 `--workspace` 正交：`--workspace` 决定索引与经验的归属，探查根不影响工作区，被探查的仓库不会被写入任何文件。
 
-**预演与确认**：无需确认；写操作仅作用于用户显式指定的输出目录与工作区 experiences/ 目录，不写索引或账本。
+**输出载荷**：`dry_run` / `applied`、输出目录、provider、`host`、文档路径列表、`experience_id`（dry-run 为 `null`）、`experience_applied`、`evidence`，以及 `experience_adapted`：`sample_size` / `host_sample_size` / `prefilled_questions` / `skipped_stages` / `similar_experience`。
+
+`evidence` 字段：`probed`（是否探查）/ `root` / `stack` / `suspects`（可疑文件路径）/ `related_tests` / `checks`（建议命令）/ `warnings`。
+
+**预演与确认**：无需确认；写操作仅作用于用户显式指定的输出目录与工作区 experiences/ 目录，不写索引或账本，也不写被探查的仓库。
 
 ---
 
 ### 4.19 `experience list` / `experience search` / `experience show`
 
-**用途**：经验回归查询——每次 `pipeline run` 处理完成后自动累计一条经验，用户可列出、检索或查看单条详情。
+**用途**：经验回归查询——每次 `pipeline run` 处理完成后自动累计一条经验，用户可列出、检索或查看单条详情；经验同时作为宿主画像的输入。
 
 **语法**：
 
@@ -815,9 +839,9 @@ skill-manager experience show <id> [--json]
 
 | 指令 | 载荷要点 |
 |---|---|
-| `experience list` | 条数、经验摘要列表（id / problem / kind / stages / createdAt / provider） |
-| `experience search` | 关键词、条数、命中列表 |
-| `experience show` | 单条经验完整记录（problem / kind / stages / decisions / docTypes / provider / durationMs / createdAt / summary） |
+| `experience list` | 条数、经验摘要列表（id / problem / kind / stages / host / createdAt / provider） |
+| `experience search` | 关键词、条数、命中列表（含 host） |
+| `experience show` | 单条经验完整记录（problem / kind / stages / skippedStages / decisions / docTypes / provider / host / durationMs / createdAt / summary） |
 
 **预演与确认**：无需确认；全部为只读操作。
 
@@ -845,7 +869,7 @@ skill-manager experience show <id> [--json]
 | `export` | 备份路径、条目数量、被剥离项、格式版本 |
 | `import` | 新增、覆盖、冲突、跳过四类条目明细 |
 | `reconcile` | 动作、选择器、前后分类与证据、共享根事务组、写入 / 账本变更 / 备份与逐项状态 |
-| `pipeline run` | 输出目录、文档路径、experience_id、experience_applied；未收敛时为 openQuestions |
+| `pipeline run` | dry_run / applied、输出目录、provider、host、文档路径、experience_id、experience_applied、experience_adapted（样本数与预填/跳过明细） |
 | `experience list` | 条数、经验摘要列表 |
 | `experience search` | 关键词、条数、命中列表 |
 | `experience show` | 单条经验完整记录 |

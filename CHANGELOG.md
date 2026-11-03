@@ -1,5 +1,42 @@
 # 变更记录
 
+## 0.9.0
+
+> 发布日期：2026-11-04
+
+### 中文摘要
+
+- **内置问题处理能力**：`pipeline run` 默认使用内核自带的本地生成（`LocalReasoningProvider`），不接外部服务、不需要密钥即可把问题处理为完整文档包。各环节按元 skill 的角色与文档骨架生成：目标/范围/成功标准/验收标准、候选方案对比、模块与接口、里程碑与验收映射、评审清单与待确认问题；缺陷类问题走「复现 → 根因假设 → 修复设计 → 回归验证」结构，不再输出「待填写」占位。
+- **按真实代码处理问题（`--probe-root` / `--probe`）**：给出仓库路径后，内核**只读**探查代码——只做 stat/readdir/readFile，不建目录、不写缓存、不执行任何命令——把问题描述切成检索词（中文按受控词表最长匹配，英文标识符直接使用），展开成代码片段后在路径与文件内容中定位相关文件，并把结果写进文档：可疑文件清单（含命中词与行号）、相关测试、仓库自己声明过的检查命令、技术栈与扫描规模。缺陷文档的「根因假设」指向具体文件，「定位顺序」把检查命令与实际要读的文件排成可执行步骤。探查有界（目录/文件/单文件读取量均有上限，不进入 `node_modules`、`.git`、构建产物），路径不可访问或未指定时降级为「未探查」并如实标注，绝不编造定位结果；探查根与 `--workspace` 正交，被探查的仓库不会被写入任何文件。
+- **症状类描述正确归类**：崩溃、报错、失败、超时、丢数据、很慢/卡顿等一律归为 bugfix（此前「更新失败」会落进新功能口径）；「性能优化」「重构」这类改造意图优先判为 refactor。定位排序上，症状词只作佐证（权重低于「安装/导出/搜索」这类功能词），翻译表、测试、文档与构建脚本按角色降权，英文片段按词边界匹配（`search` 不再命中 `research`）。
+- **草案优先**：未提供回答也直接产出完整文档包（推断内容 + 待确认问题），不再阻塞在问卷待答状态；回答来源优先级为 `--answers` > `--experience` 相似经验 > 宿主画像高频回答；`--dry-run` 只返回计划载荷，不写文件、不记经验。
+- **经验回归自动适配宿主**：经验记录新增宿主、环节计划与问题 id；每次处理自动归纳宿主画像，同类问题自动预填高频回答、在文档中注入历史经验提示，并在样本足够时按「多数跳过」降级环节；结果通过 `experience_adapted`（样本数、预填问题、跳过环节、相似经验）可核对。旧记录（无宿主）作为通用证据继续生效。
+- **LLM 路径增强**：提示词改为「元 skill 角色 + 环节指令 + 问题/决策/前置文档」，环节之间传递前置文档；选择外部 provider 但缺密钥时退回本地生成，不静默失败。
+- **跨宿主审计与批量采纳（M6）**：审计矩阵补充 frontmatter 字段与 version 漂移明细（仅在 ≥2 个可读副本的组内比较，单副本不比较）；新增报告导出 `scan --inventory --audit --format markdown|html|sarif --output <文件>`，HTML 自包含且全部用户内容转义，SARIF 通过 2.1.0 schema 校验且 artifact URI 不含用户 home 绝对路径；新增 `reconcile --action adopt --bulk` 批量采纳，按确定性排序与冲突策略（rename/skip/force）逐项事务执行，单条失败不污染整批，默认预览。指令总数仍是 21 条，未新增独立 `adopt` 指令。
+- **修复 v0.8.0 发布阻断**：打包内核（CJS/SEA）因 `kernel/core/bootstrap/builtin-skills.ts` 模块顶层求值 `import.meta` 而启动即崩溃。改为运行期候选目录探测；构建新增 `empty-import-meta` 硬门与产物 `--version` 自检。
+- **修复内置示范技能**：路径多退一级导致 5 个内置模板从未安装成功；模板元数据（`path` 需为 `./skills/<id>`、移除非法 `checksum: ''` 与派生时间戳）修正后 `init → scan → validate` 全链路干净。安装同时改为跟随真实工作区，并只在默认工作区、非只读命令时生效。
+- **健壮性与查询一致性**：`experience list/search/show` 正确遵循 `--workspace`（此前只看环境变量/默认工作区）；单个损坏的经验 YAML 不再让 `pipeline run` / `experience list` 抛栈崩溃——列表跳过并在结果中报告 `unreadable_experiences`，`experience show` 返回可读问题码；输出目录非法等写盘失败同样转为问题码，不再输出崩溃栈。
+- **版本与文档**：README 状态更新；契约 4.18 同步草案优先、`--host`、`--dry-run`、经验适配与输出载荷。
+
+### English Summary
+
+- **Built-in problem handling**: `pipeline run` now defaults to an in-kernel local generator (`LocalReasoningProvider`) that produces complete document packages without any external service or API key. Each stage follows its meta-skill role and document skeleton; bugfix problems use a reproduction → root-cause → fix-design → regression structure instead of placeholder text.
+- **Code-grounded problem handling (`--probe-root` / `--probe`)**: given a repository path, the kernel inspects it **read-only** — stat/readdir/readFile only, no directory creation, no cache writes, no command execution. The problem statement is tokenized (Chinese via a controlled lexicon with longest-match, English identifiers as-is) and expanded into code fragments, then matched against file paths and contents. Results are written into the document package: suspect files with matched words and line numbers, related tests, checks the repository itself declares, tech stack and scan size. Root-cause hypotheses point at concrete files, and the "inspection order" turns checks plus files-to-read into executable steps. Probing is bounded (directory/file/per-file read caps, skipping `node_modules`, `.git` and build output); an unreachable or absent root degrades to "not probed" with an explicit note and never fabricates a location. The probe root is orthogonal to `--workspace`, so the inspected repository is never written to.
+- **Symptom descriptions classify correctly**: crash, error, failure, timeout, data loss, slowness/hang now map to bugfix (previously "update failed" landed in the new-feature lane); refactor intent such as "performance tuning" or "refactor" takes precedence. For ranking, symptom words are corroborating only (weighted below domain words such as install/export/search), translation tables, tests, docs and build scripts are down-weighted by role, and English fragments match on word boundaries so `search` no longer hits `research`.
+- **Draft-first**: runs without answers still produce a full package (inferred content plus open questions) instead of blocking on the questionnaire; answer precedence is `--answers` > `--experience` > host-profile suggestions.
+- **Host-adaptive experience regression**: experience records now carry host, stage plan and question ids. Each run derives a host profile, prefills high-frequency answers for similar problems, injects historical hints into documents, and downgrades stages that history mostly skipped when enough samples exist. `experience_adapted` reports the evidence. Legacy records without a host remain usable as generic evidence.
+- **Stronger LLM path**: prompts combine meta-skill role, stage instruction, problem, decisions and prior documents; a missing API key falls back to local generation instead of failing silently.
+- **Cross-host audit and bulk adoption (M6)**: the audit matrix now reports frontmatter field and version drift (compared only within groups of ≥2 readable copies; single copies are not compared). New report export via `scan --inventory --audit --format markdown|html|sarif --output <file>`: HTML is self-contained with every user value escaped, SARIF validates against the 2.1.0 schema and never embeds absolute home paths in artifact URIs. New `reconcile --action adopt --bulk` performs batch adoption with deterministic ordering and conflict policies (rename/skip/force), executing item by item so one failure cannot pollute the batch, and previews by default. The command count stays at 21 — adopt remains an action of `reconcile`, not a separate command.
+- **Fixed v0.8.0 release blocker**: the packaged CJS/SEA kernel crashed at startup because `kernel/core/bootstrap/builtin-skills.ts` evaluated `import.meta` at module scope. Replaced with runtime directory probing; the build now fails on `empty-import-meta` and self-checks the executable with `--version`.
+- **Fixed built-in demo skills**: a wrong relative path meant the five templates were never installed; template metadata (`path` must be `./skills/<id>`, invalid empty `checksum`, derived timestamps) is corrected so `init → scan → validate` is clean. Installation now follows the real workspace and only runs for the default workspace on non-read-only commands.
+- **Robustness and query consistency**: `experience list/search/show` now honor `--workspace`; a single corrupt experience YAML no longer crashes `pipeline run` or `experience list` (list skips it and reports `unreadable_experiences`, `experience show` returns a readable problem code), and write failures such as an invalid output directory become problem codes instead of stack traces.
+
+### Verification
+
+- Regular tests: **929 items** (928 pass + 1 platform-specific skip).
+- `check` / `typecheck` / `lint` / `format` / `build` / `smoke:kernel` / `probe:inventory` / `probe:reconcile` all green.
+- `probe:production-kernel`: SEA executable boots, six reconcile actions, 302 piped copies large-JSON intact, built-in skills shipped and installed.
+
 ## 0.8.0
 
 > 发布日期：2026-10-31

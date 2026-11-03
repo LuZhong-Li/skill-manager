@@ -1,6 +1,6 @@
 {
   "name": "skill-manager",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "private": true,
   "description": "Skill 元信息管理器的内核与桌面外壳",
   "type": "module",

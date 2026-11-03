@@ -1,6 +1,16 @@
 # M6 Bulk Adopt and Audit Report Export Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **状态：已收官（v0.9.0 收口时复核）**。T0–T7 全部步骤交付并勾选，交付物与验证口径如下：
+>
+> - 契约与渲染：`contract/src/audit-report.ts`、`kernel/audit/audit-frontmatter.ts`、`kernel/audit/report-render.ts`、`kernel/audit/report-write.ts`
+> - 批量采纳：`kernel/dispatch/reconcile/adopt-bulk.ts`、`adopt-source.ts`
+> - 界面：`AuditMatrixView.vue`、`AuditExportMenu.vue`、`UnmanagedBulkAdoptDialog.vue`
+> - 测试：`tests/unit/m6-*.test.ts` 与 `tests/e2e/m6-*.test.ts` 共 34 项全通过；SARIF 夹具位于 `tests/fixtures/sarif/`
+> - 实测：`scan --inventory --audit --format markdown|html|sarif --output` 三种格式均正常产出；`reconcile --action adopt --bulk --dry-run` 可预览
+>
+> 下方复选框保留原始 TDD 步骤，作为过程记录。
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Deliver cross-host audit drift details, report export, and safe batch adoption without adding commands or weakening existing per-item transaction boundaries.
 
@@ -99,7 +109,7 @@ Numeric order is not execution order: T4 must precede T3 because T3 wires the im
 - Produces: `AdoptConflictPolicy`, `BulkAdoptPolicy`, `AdoptPreview`, `BulkAdoptSummary`, extended `ReconcileSelection` / `ReconcilePlanSummary`.
 - Produces: `AuditReportFormat`, `AuditReportMeta`, `AuditReportDocument`.
 
-- [ ] **Step 1: Write failing contract tests**
+- [x] **Step 1: Write failing contract tests**
 
 ```ts
 test('M6 contract: drift detail fields are additive', () => {
@@ -136,17 +146,17 @@ test('M6 contract: bulk adopt and report types are optional/additive', () => {
 });
 ```
 
-- [ ] **Step 2: Run the focused test and verify the missing types fail compilation**
+- [x] **Step 2: Run the focused test and verify the missing types fail compilation**
 
 Run: `node --test tests/contract/m6-contract-shape.test.ts`
 
 Expected: FAIL because the M6 fields/types are not declared.
 
-- [ ] **Step 3: Add the minimal contract types**
+- [x] **Step 3: Add the minimal contract types**
 
 Add the exact optional fields from design sections 2.1–2.5. Preserve all current status values, including `unmapped` and `workspace_only`. Add `adopt_preview` to `ReconcilePlanItem`, `bulk` to `ReconcilePlanSummary`, and additive fields in `ReconcileSelection`.
 
-- [ ] **Step 4: Register CLI contract additions without adding commands**
+- [x] **Step 4: Register CLI contract additions without adding commands**
 
 Document:
 
@@ -157,13 +167,13 @@ scan --inventory --audit --format markdown|html|sarif [--output PATH]
 
 Record that `--format` and `--json` are mutually exclusive.
 
-- [ ] **Step 5: Run contract verification**
+- [x] **Step 5: Run contract verification**
 
 Run: `npm run check:contract && npm run typecheck:contract && node --test tests/contract/m6-contract-shape.test.ts`
 
 Expected: all pass; command count remains 17.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add contract/src/host-inventory.ts contract/src/reconcile.ts contract/src/audit-report.ts contract/src/index.ts docs/specification/cli-contract.md docs/specification/result-and-exit-codes.md tests/contract/m6-contract-shape.test.ts
@@ -203,7 +213,7 @@ interface AuditFrontmatterComparison {
 }
 ```
 
-- [ ] **Step 1: Write failing comparator tests**
+- [x] **Step 1: Write failing comparator tests**
 
 ```ts
 function copy(
@@ -240,13 +250,13 @@ test('M6 drift: all missing versions produce note, not drift', () => {
 });
 ```
 
-- [ ] **Step 2: Run test and verify RED**
+- [x] **Step 2: Run test and verify RED**
 
 Run: `node --test tests/unit/m6-audit-frontmatter.test.ts`
 
 Expected: FAIL because the module does not exist.
 
-- [ ] **Step 3: Implement the pure comparator**
+- [x] **Step 3: Implement the pure comparator**
 
 Implement exact normalization:
 
@@ -257,7 +267,7 @@ Implement exact normalization:
 - return `metadata_incomplete=true` when every version is missing;
 - never classify a single copy as drift.
 
-- [ ] **Step 4: Integrate subtype decisions into audit projection**
+- [x] **Step 4: Integrate subtype decisions into audit projection**
 
 In `audit-projection.ts`, preserve existing status calculation. For `status=drift`, apply priority:
 
@@ -270,13 +280,13 @@ all versions missing -> no subtype + metadata_incomplete reason
 
 Add `drift_by_subtype` counts to summary.
 
-- [ ] **Step 5: Run unit and e2e audit tests**
+- [x] **Step 5: Run unit and e2e audit tests**
 
 Run: `node --test tests/unit/m6-audit-frontmatter.test.ts tests/e2e/m6-audit-drift.test.ts`
 
 Expected: pass for single-copy skip, each field mismatch, version fallback, all-missing note, checksum precedence, and insufficient evidence.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add kernel/audit/audit-frontmatter.ts kernel/audit/index.ts kernel/dispatch/scan/audit-projection.ts tests/unit/m6-audit-frontmatter.test.ts tests/e2e/m6-audit-drift.test.ts
@@ -300,7 +310,7 @@ git commit -m "feat(audit): M6 frontmatter and version drift comparison"
 - Consumes: `InventoryAuditData`, `AuditReportMeta`, `AuditReportFormat`.
 - Produces: `renderAuditReport(format, audit, meta): AuditReportDocument`.
 
-- [ ] **Step 1: Write failing golden and SARIF schema tests**
+- [x] **Step 1: Write failing golden and SARIF schema tests**
 
 ```ts
 for (const format of ['markdown', 'html', 'sarif'] as const) {
@@ -320,13 +330,13 @@ test('M6 report: HTML has no external assets or scripts', () => {
 });
 ```
 
-- [ ] **Step 2: Run test and verify RED**
+- [x] **Step 2: Run test and verify RED**
 
 Run: `node --test tests/unit/m6-report-render.test.ts`
 
 Expected: FAIL because renderer and fixtures do not exist.
 
-- [ ] **Step 3: Implement the renderer**
+- [x] **Step 3: Implement the renderer**
 
 Implement:
 
@@ -335,17 +345,17 @@ Implement:
 - SARIF 2.1.0 with 7 rules, stable `partialFingerprints`, sanitized artifact URIs;
 - deterministic sorting and fixed English labels.
 
-- [ ] **Step 4: Add and validate golden fixtures**
+- [x] **Step 4: Add and validate golden fixtures**
 
 Generate the fixture with the implementation, manually review all three outputs, save them as expected files, and validate SARIF against the vendored official schema using existing `ajv`.
 
-- [ ] **Step 5: Run renderer tests**
+- [x] **Step 5: Run renderer tests**
 
 Run: `node --test tests/unit/m6-report-render.test.ts`
 
 Expected: 3 snapshot checks pass; SARIF schema check passes; HTML external-resource check passes.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add kernel/audit/report-render.ts tests/fixtures/audit-report tests/fixtures/sarif/sarif-2.1.0.schema.json tests/unit/m6-report-render.test.ts
@@ -369,7 +379,7 @@ git commit -m "feat(audit): M6 markdown html sarif report renderers"
 - Consumes: T2 `renderAuditReport` and T4 bulk behavior through the existing reconcile dispatch.
 - Produces: CLI `reconcile --action adopt --bulk` and `scan --inventory --audit --format|--output`.
 
-- [ ] **Step 1: Write failing CLI tests**
+- [x] **Step 1: Write failing CLI tests**
 
 ```ts
 test('M6 CLI: reconcile bulk adopts deterministic user candidates', async () => {
@@ -394,13 +404,13 @@ test('M6 CLI: output writes report and returns Result envelope', async () => {
 });
 ```
 
-- [ ] **Step 2: Run tests and verify RED**
+- [x] **Step 2: Run tests and verify RED**
 
 Run: `node --test tests/e2e/m6-cli-bulk-adopt.test.ts tests/e2e/m6-cli-report-output.test.ts`
 
 Expected: FAIL because new options are rejected or report routing is absent.
 
-- [ ] **Step 3: Register and validate options**
+- [x] **Step 3: Register and validate options**
 
 Add parser/registry entries for:
 
@@ -415,7 +425,7 @@ Add parser/registry entries for:
 
 Keep the command count at 17 and update `cli-contract.md`.
 
-- [ ] **Step 4: Implement CLI presentation routing**
+- [x] **Step 4: Implement CLI presentation routing**
 
 In `entry/cli.ts`:
 
@@ -424,13 +434,13 @@ In `entry/cli.ts`:
 - `format` + `json`: parameter error;
 - fatal report generation: write no partial file and return standard error envelope.
 
-- [ ] **Step 5: Run CLI tests and full parser regression**
+- [x] **Step 5: Run CLI tests and full parser regression**
 
 Run: `node --test tests/e2e/m6-cli-bulk-adopt.test.ts tests/e2e/m6-cli-report-output.test.ts tests/unit/parsers.test.ts`
 
 Expected: all pass; old parser behavior unchanged.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add kernel/dispatch/reconcile/options.ts kernel/dispatch/scan/options.ts kernel/dispatch/scan/inventory.ts kernel/audit/report-write.ts kernel/entry/cli.ts tests/e2e/m6-cli-bulk-adopt.test.ts tests/e2e/m6-cli-report-output.test.ts
@@ -454,7 +464,7 @@ git commit -m "feat(cli): M6 bulk adopt and audit report formats"
 - Produces: `resolveAdoptConflict(input: { requestedId: string; sourceDigest: string; index: SkillIndex; reservedIds: Set<string>; policy: AdoptConflictPolicy }): { targetId: string; conflict: AdoptPreview['conflict'] }`.
 - Produces: `adopt_preview` on planned items and optional `summary.bulk`.
 
-- [ ] **Step 1: Write the five required failing conflict scenarios**
+- [x] **Step 1: Write the five required failing conflict scenarios**
 
 Add these exact test names and final assertions:
 
@@ -468,13 +478,13 @@ Add these exact test names and final assertions:
 
 Each test asserts per-item status, reason, target path, and that later items still execute.
 
-- [ ] **Step 2: Run tests and verify RED**
+- [x] **Step 2: Run tests and verify RED**
 
 Run: `node --test tests/unit/m6-adopt-bulk.test.ts tests/e2e/m6-adopt-bulk-conflicts.test.ts`
 
 Expected: FAIL because bulk selection and policy are absent.
 
-- [ ] **Step 3: Implement deterministic bulk candidate selection**
+- [x] **Step 3: Implement deterministic bulk candidate selection**
 
 Filter to adoptable classifications, deduplicate physical keys, apply roles, then limit. Sort by:
 
@@ -484,7 +494,7 @@ skill_id, host_id, root_role, physical_key
 
 Default role is `user`. Explicit non-user roles are planned as skipped by the existing write guard.
 
-- [ ] **Step 4: Implement conflict policy in the single-item adopt path**
+- [x] **Step 4: Implement conflict policy in the single-item adopt path**
 
 - same ID + same content: skipped; `--rename` does not duplicate;
 - same ID + different content: default skipped; rename chooses the next valid `-N`; force replaces via backup + atomic writes;
@@ -492,17 +502,17 @@ Default role is `user`. Explicit non-user roles are planned as skipped by the ex
 - rename reserves IDs across the full stable batch;
 - force still rejects non-user roles, shared-root violations, and unrelated path conflicts.
 
-- [ ] **Step 5: Populate plan preview and execute through existing executor**
+- [x] **Step 5: Populate plan preview and execute through existing executor**
 
 Fill `adopt_preview` with source path, requested/resolved ID, description, version, conflict, and policy. Do not change `executeReconcilePlan` into a batch transaction.
 
-- [ ] **Step 6: Run bulk and conflict tests**
+- [x] **Step 6: Run bulk and conflict tests**
 
 Run: `node --test tests/unit/m6-adopt-bulk.test.ts tests/e2e/m6-adopt-bulk-conflicts.test.ts tests/e2e/reconcile-batch.test.ts tests/e2e/reconcile-failure-matrix.test.ts`
 
 Expected: all pass; old batch reconcile tests remain green.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add kernel/dispatch/reconcile/adopt-bulk.ts kernel/dispatch/reconcile/adopt-source.ts kernel/dispatch/reconcile/plan.ts tests/unit/m6-adopt-bulk.test.ts tests/e2e/m6-adopt-bulk-conflicts.test.ts
@@ -528,7 +538,7 @@ git commit -m "feat(reconcile): M6 bulk adopt conflict policies"
 - Consumes: T1 audit rows/summary and T3 `scan --format --output`.
 - Produces: Audit tab, matrix table, export menu, report save IPC.
 
-- [ ] **Step 1: Add failing UI/contract tests**
+- [x] **Step 1: Add failing UI/contract tests**
 
 ```ts
 const view = readFileSync('gui/renderer/src/components/HostInventoryView.vue', 'utf8');
@@ -547,17 +557,17 @@ assert.match(exportHandler, /--output/);
 
 Also extend GUI smoke fixture with audit rows containing all three drift subtypes and a saved/canceled export.
 
-- [ ] **Step 2: Run focused tests and verify RED**
+- [x] **Step 2: Run focused tests and verify RED**
 
 Run: `node --test tests/contract/m6-audit-gui.test.ts`
 
 Expected: FAIL because view and export controls are absent.
 
-- [ ] **Step 3: Implement AuditMatrixView**
+- [x] **Step 3: Implement AuditMatrixView**
 
 Render summary counters, skill × host matrix, subtype badges, host-missing list, reasons/evidence, and empty/loading/error states. Add i18n keys in both locales.
 
-- [ ] **Step 4: Implement export path**
+- [x] **Step 4: Implement export path**
 
 `AuditExportMenu` emits one of three formats. Main process shows save dialog with format filter and invokes:
 
@@ -567,13 +577,13 @@ scan --inventory --audit --format <fmt> --output <path> --json
 
 The renderer receives `{ canceled, path?, error? }` and never constructs filesystem paths.
 
-- [ ] **Step 5: Run GUI contract and smoke tests**
+- [x] **Step 5: Run GUI contract and smoke tests**
 
 Run: `node scripts/gui-smoke.mjs`
 
 Expected: existing 88 checks plus audit matrix, 3-format menu, save success/cancel/error checks pass; en/zh-CN key parity remains exact.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add gui/renderer/src/components/audit gui/renderer/src/components/HostInventoryView.vue gui/main/inventory-export.ts gui/preload/index.ts gui/renderer/src/i18n/locales tests/contract/m6-audit-gui.test.ts scripts/gui-smoke.mjs
@@ -596,7 +606,7 @@ git commit -m "feat(gui): M6 audit matrix and report export"
 - Consumes: T4 conflict/plan behavior, T5 audit matrix tab, existing `InventoryActionDialog`.
 - Produces: adopt-specific wrapper with policy explanation, progress, summary, and audit refresh.
 
-- [ ] **Step 1: Add failing GUI smoke checks**
+- [x] **Step 1: Add failing GUI smoke checks**
 
 ```ts
 check(
@@ -619,27 +629,27 @@ check(
 );
 ```
 
-- [ ] **Step 2: Run smoke target and verify RED**
+- [x] **Step 2: Run smoke target and verify RED**
 
 Run: `node scripts/gui-smoke.mjs`
 
 Expected: FAIL at the new unmanaged bulk adopt checks.
 
-- [ ] **Step 3: Implement the wrapper without duplicating execution logic**
+- [x] **Step 3: Implement the wrapper without duplicating execution logic**
 
 `UnmanagedBulkAdoptDialog` owns only adopt labels, conflict-policy display, selected-target summaries, and the post-success audit refresh event. It reuses `InventoryActionDialog` for one preview and per-item apply/progress/cancel/summary.
 
-- [ ] **Step 4: Wire audit refresh**
+- [x] **Step 4: Wire audit refresh**
 
 When at least one item succeeds, call `scan --inventory --audit` and switch `HostInventoryView` to the audit tab. Preserve failed/skipped details until the user closes the dialog.
 
-- [ ] **Step 5: Run GUI smoke**
+- [x] **Step 5: Run GUI smoke**
 
 Run: `node scripts/gui-smoke.mjs`
 
 Expected: complete pass, including cancel boundary, non-user checkbox disabled, and en/zh-CN parity.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add gui/renderer/src/components/unmanaged gui/renderer/src/components/HostInventoryView.vue gui/renderer/src/i18n/locales tests/contract/m6-unmanaged-adopt-ui.test.ts scripts/gui-smoke.mjs
@@ -662,7 +672,7 @@ git commit -m "feat(gui): M6 unmanaged bulk adopt flow"
 - Consumes: all T0–T6 outputs.
 - Produces: reusable M6 fixture builders and final acceptance evidence.
 
-- [ ] **Step 1: Centralize the five conflict fixtures**
+- [x] **Step 1: Centralize the five conflict fixtures**
 
 Create helper builders for:
 
@@ -676,7 +686,7 @@ rename-or-force-boundary
 
 Each builder writes real `SKILL.md` files and must be usable by unit and e2e tests.
 
-- [ ] **Step 2: Add report hard-gate assertions**
+- [x] **Step 2: Add report hard-gate assertions**
 
 Run each format against the same audit fixture and assert:
 
@@ -686,7 +696,7 @@ Run each format against the same audit fixture and assert:
 - report metadata has no absolute `C:\Users\<name>` or `/home/<name>` path;
 - audit snapshot bytes are unchanged except the explicit output file.
 
-- [ ] **Step 3: Run cross-surface acceptance tests**
+- [x] **Step 3: Run cross-surface acceptance tests**
 
 Run:
 
@@ -697,7 +707,7 @@ node scripts/gui-smoke.mjs
 
 Expected: all M6 tests pass; SARIF schema passes; five conflict fixtures pass; GUI audit/export/bulk checks pass.
 
-- [ ] **Step 4: Run full repository gates**
+- [x] **Step 4: Run full repository gates**
 
 Run:
 
@@ -712,13 +722,13 @@ npm run build
 
 Expected: all exit 0; command count still 17; existing tests do not regress; complexity and file-size ratchet have 0 new violations.
 
-- [ ] **Step 5: Verify worktree and rollback artifacts**
+- [x] **Step 5: Verify worktree and rollback artifacts**
 
 Run: `git status --short && git diff --check`
 
 Expected: only intended files; no temp report files, audit caches, or fixture residue.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add tests/helpers tests/e2e tests/unit scripts/gui-smoke.mjs scripts/gui-smoke-fixtures.mjs

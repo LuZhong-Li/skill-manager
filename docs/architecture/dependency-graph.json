@@ -621,6 +621,12 @@
       "layer": "core"
     },
     {
+      "path": "kernel/core/experience/profile.ts",
+      "kind": "source",
+      "region": "kernel-core",
+      "layer": "core"
+    },
+    {
       "path": "kernel/core/experience/store.ts",
       "kind": "source",
       "region": "kernel-core",
@@ -861,6 +867,24 @@
       "layer": "core"
     },
     {
+      "path": "kernel/core/pipeline/evidence-scan.ts",
+      "kind": "source",
+      "region": "kernel-core",
+      "layer": "core"
+    },
+    {
+      "path": "kernel/core/pipeline/evidence-terms.ts",
+      "kind": "source",
+      "region": "kernel-core",
+      "layer": "core"
+    },
+    {
+      "path": "kernel/core/pipeline/evidence.ts",
+      "kind": "source",
+      "region": "kernel-core",
+      "layer": "core"
+    },
+    {
       "path": "kernel/core/pipeline/index.ts",
       "kind": "source",
       "region": "kernel-core",
@@ -868,6 +892,30 @@
     },
     {
       "path": "kernel/core/pipeline/llm-providers.ts",
+      "kind": "source",
+      "region": "kernel-core",
+      "layer": "core"
+    },
+    {
+      "path": "kernel/core/pipeline/local-content-shared.ts",
+      "kind": "source",
+      "region": "kernel-core",
+      "layer": "core"
+    },
+    {
+      "path": "kernel/core/pipeline/local-content-ui.ts",
+      "kind": "source",
+      "region": "kernel-core",
+      "layer": "core"
+    },
+    {
+      "path": "kernel/core/pipeline/local-content.ts",
+      "kind": "source",
+      "region": "kernel-core",
+      "layer": "core"
+    },
+    {
+      "path": "kernel/core/pipeline/local-provider.ts",
       "kind": "source",
       "region": "kernel-core",
       "layer": "core"
@@ -3542,6 +3590,20 @@
       "to_layer": "store"
     },
     {
+      "from": "kernel/core/experience/profile.ts",
+      "to": "kernel/core/experience/types.ts",
+      "specifier": "./types.ts",
+      "from_layer": "core",
+      "to_layer": "core"
+    },
+    {
+      "from": "kernel/core/experience/profile.ts",
+      "to": "kernel/core/pipeline/types.ts",
+      "specifier": "../pipeline/types.ts",
+      "from_layer": "core",
+      "to_layer": "core"
+    },
+    {
       "from": "kernel/core/experience/store.ts",
       "to": "kernel/core/experience/types.ts",
       "specifier": "./types.ts",
@@ -4613,6 +4675,27 @@
       "to_layer": "core"
     },
     {
+      "from": "kernel/core/pipeline/evidence.ts",
+      "to": "kernel/core/pipeline/evidence-scan.ts",
+      "specifier": "./evidence-scan.ts",
+      "from_layer": "core",
+      "to_layer": "core"
+    },
+    {
+      "from": "kernel/core/pipeline/evidence.ts",
+      "to": "kernel/core/pipeline/evidence-terms.ts",
+      "specifier": "./evidence-terms.ts",
+      "from_layer": "core",
+      "to_layer": "core"
+    },
+    {
+      "from": "kernel/core/pipeline/evidence.ts",
+      "to": "kernel/core/pipeline/types.ts",
+      "specifier": "./types.ts",
+      "from_layer": "core",
+      "to_layer": "core"
+    },
+    {
       "from": "kernel/core/pipeline/index.ts",
       "to": "kernel/core/pipeline/classify.ts",
       "specifier": "./classify.ts",
@@ -4621,8 +4704,57 @@
     },
     {
       "from": "kernel/core/pipeline/index.ts",
+      "to": "kernel/core/pipeline/evidence-scan.ts",
+      "specifier": "./evidence-scan.ts",
+      "from_layer": "core",
+      "to_layer": "core"
+    },
+    {
+      "from": "kernel/core/pipeline/index.ts",
+      "to": "kernel/core/pipeline/evidence-terms.ts",
+      "specifier": "./evidence-terms.ts",
+      "from_layer": "core",
+      "to_layer": "core"
+    },
+    {
+      "from": "kernel/core/pipeline/index.ts",
+      "to": "kernel/core/pipeline/evidence.ts",
+      "specifier": "./evidence.ts",
+      "from_layer": "core",
+      "to_layer": "core"
+    },
+    {
+      "from": "kernel/core/pipeline/index.ts",
       "to": "kernel/core/pipeline/llm-providers.ts",
       "specifier": "./llm-providers.ts",
+      "from_layer": "core",
+      "to_layer": "core"
+    },
+    {
+      "from": "kernel/core/pipeline/index.ts",
+      "to": "kernel/core/pipeline/local-content-shared.ts",
+      "specifier": "./local-content-shared.ts",
+      "from_layer": "core",
+      "to_layer": "core"
+    },
+    {
+      "from": "kernel/core/pipeline/index.ts",
+      "to": "kernel/core/pipeline/local-content-ui.ts",
+      "specifier": "./local-content-ui.ts",
+      "from_layer": "core",
+      "to_layer": "core"
+    },
+    {
+      "from": "kernel/core/pipeline/index.ts",
+      "to": "kernel/core/pipeline/local-content.ts",
+      "specifier": "./local-content.ts",
+      "from_layer": "core",
+      "to_layer": "core"
+    },
+    {
+      "from": "kernel/core/pipeline/index.ts",
+      "to": "kernel/core/pipeline/local-provider.ts",
+      "specifier": "./local-provider.ts",
       "from_layer": "core",
       "to_layer": "core"
     },
@@ -4677,6 +4809,69 @@
     },
     {
       "from": "kernel/core/pipeline/llm-providers.ts",
+      "to": "kernel/core/pipeline/meta-skills.ts",
+      "specifier": "./meta-skills.ts",
+      "from_layer": "core",
+      "to_layer": "core"
+    },
+    {
+      "from": "kernel/core/pipeline/llm-providers.ts",
+      "to": "kernel/core/pipeline/types.ts",
+      "specifier": "./types.ts",
+      "from_layer": "core",
+      "to_layer": "core"
+    },
+    {
+      "from": "kernel/core/pipeline/local-content-shared.ts",
+      "to": "kernel/core/pipeline/types.ts",
+      "specifier": "./types.ts",
+      "from_layer": "core",
+      "to_layer": "core"
+    },
+    {
+      "from": "kernel/core/pipeline/local-content-ui.ts",
+      "to": "kernel/core/pipeline/local-content-shared.ts",
+      "specifier": "./local-content-shared.ts",
+      "from_layer": "core",
+      "to_layer": "core"
+    },
+    {
+      "from": "kernel/core/pipeline/local-content-ui.ts",
+      "to": "kernel/core/pipeline/types.ts",
+      "specifier": "./types.ts",
+      "from_layer": "core",
+      "to_layer": "core"
+    },
+    {
+      "from": "kernel/core/pipeline/local-content.ts",
+      "to": "kernel/core/pipeline/local-content-shared.ts",
+      "specifier": "./local-content-shared.ts",
+      "from_layer": "core",
+      "to_layer": "core"
+    },
+    {
+      "from": "kernel/core/pipeline/local-content.ts",
+      "to": "kernel/core/pipeline/local-content-ui.ts",
+      "specifier": "./local-content-ui.ts",
+      "from_layer": "core",
+      "to_layer": "core"
+    },
+    {
+      "from": "kernel/core/pipeline/local-content.ts",
+      "to": "kernel/core/pipeline/types.ts",
+      "specifier": "./types.ts",
+      "from_layer": "core",
+      "to_layer": "core"
+    },
+    {
+      "from": "kernel/core/pipeline/local-provider.ts",
+      "to": "kernel/core/pipeline/local-content.ts",
+      "specifier": "./local-content.ts",
+      "from_layer": "core",
+      "to_layer": "core"
+    },
+    {
+      "from": "kernel/core/pipeline/local-provider.ts",
       "to": "kernel/core/pipeline/types.ts",
       "specifier": "./types.ts",
       "from_layer": "core",
@@ -4700,6 +4895,13 @@
       "from": "kernel/core/pipeline/plan.ts",
       "to": "kernel/core/pipeline/types.ts",
       "specifier": "./types.ts",
+      "from_layer": "core",
+      "to_layer": "core"
+    },
+    {
+      "from": "kernel/core/pipeline/provider.ts",
+      "to": "kernel/core/pipeline/meta-skills.ts",
+      "specifier": "./meta-skills.ts",
       "from_layer": "core",
       "to_layer": "core"
     },
@@ -6896,6 +7098,13 @@
     },
     {
       "from": "kernel/dispatch/registry/commands/experience.ts",
+      "to": "kernel/dispatch/shared/options.ts",
+      "specifier": "../../shared/options.ts",
+      "from_layer": "dispatch",
+      "to_layer": "dispatch"
+    },
+    {
+      "from": "kernel/dispatch/registry/commands/experience.ts",
       "to": "kernel/store/findings.ts",
       "specifier": "../../../store/findings.ts",
       "from_layer": "dispatch",
@@ -7267,6 +7476,13 @@
     },
     {
       "from": "kernel/dispatch/registry/commands/pipeline.ts",
+      "to": "kernel/core/experience/profile.ts",
+      "specifier": "../../../core/experience/profile.ts",
+      "from_layer": "dispatch",
+      "to_layer": "core"
+    },
+    {
+      "from": "kernel/dispatch/registry/commands/pipeline.ts",
       "to": "kernel/core/experience/store.ts",
       "specifier": "../../../core/experience/store.ts",
       "from_layer": "dispatch",
@@ -7313,6 +7529,13 @@
       "specifier": "../../result/index.ts",
       "from_layer": "dispatch",
       "to_layer": "dispatch"
+    },
+    {
+      "from": "kernel/dispatch/registry/commands/pipeline.ts",
+      "to": "kernel/store/errors.ts",
+      "specifier": "../../../store/errors.ts",
+      "from_layer": "dispatch",
+      "to_layer": "store"
     },
     {
       "from": "kernel/dispatch/registry/commands/pipeline.ts",
@@ -9444,15 +9667,15 @@
     }
   ],
   "stats": {
-    "source_files": 305,
+    "source_files": 313,
     "asset_nodes": 1,
-    "nodes": 306,
-    "edges": 1086,
+    "nodes": 314,
+    "edges": 1111,
     "unresolved": 0,
     "cycles": 0,
     "layers": {
       "contract": 12,
-      "core": 86,
+      "core": 94,
       "dispatch": 69,
       "entry": 2,
       "gui": 73,
@@ -9462,8 +9685,8 @@
     },
     "outgoing": {
       "contract": 19,
-      "core": 319,
-      "dispatch": 526,
+      "core": 341,
+      "dispatch": 529,
       "entry": 10,
       "gui": 147,
       "public": 6,
@@ -9472,18 +9695,18 @@
     },
     "incoming": {
       "contract": 19,
-      "core": 378,
-      "dispatch": 217,
+      "core": 401,
+      "dispatch": 218,
       "entry": 1,
       "gui": 147,
       "public": 1,
       "scripts": 37,
-      "store": 286
+      "store": 287
     },
     "cross_layer_edges": {
       "core->store": 114,
-      "dispatch->core": 170,
-      "dispatch->store": 148,
+      "dispatch->core": 171,
+      "dispatch->store": 149,
       "entry->core": 2,
       "entry->dispatch": 5,
       "entry->store": 2,

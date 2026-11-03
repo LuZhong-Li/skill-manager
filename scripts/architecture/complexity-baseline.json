@@ -1,6 +1,6 @@
 {
   "schema_version": "1",
-  "generated_at": "2026-10-31T09:02:29.037Z",
+  "generated_at": "2026-11-03T14:24:08.150Z",
   "complexity": {
     "threshold": 10,
     "entries": [
@@ -681,16 +681,6 @@
         "scope": "toggleHandler",
         "signature": "return async ({ args, now, interaction }) => {",
         "complexity": 15,
-        "owner": "dispatch",
-        "clearedBy": "P1-b"
-      },
-      {
-        "id": "kernel/dispatch/registry/commands/pipeline.ts#<anonymous>#c773f3734732",
-        "file": "kernel/dispatch/registry/commands/pipeline.ts",
-        "function": "<anonymous>",
-        "scope": "<module>",
-        "signature": "const pipelineRunHandler: CommandHandler = async (context): Promise<Result<unknown>> => {",
-        "complexity": 17,
         "owner": "dispatch",
         "clearedBy": "P1-b"
       },
