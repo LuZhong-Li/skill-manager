@@ -149,10 +149,12 @@ export async function runPluginSmoke({ evaluate, waitFor, check, workspace }) {
   await runPluginInventoryActionChecks({ evaluate, waitFor, check, workspace });
   await evaluate('document.querySelector(\'[data-plugin-id="smoke-tools"] button\')?.click()');
   await waitFor("document.querySelector('.dialog')?.innerText.includes('landings') === true", 60);
+  // 断言稳定属性而非本地化文案：状态标签会被中英切换改写（enabled / 已启用），
+  // 用它做判据会让结果随界面语言漂移。data-plugin-state 始终是内核原始值。
   check(
     '插件详情展示 landings 账本与落位路径',
     (await evaluate(
-      "document.querySelector('.dialog')?.innerText.includes('.zed') && document.querySelector('.dialog')?.innerText.includes('active')",
+      "document.querySelector('.dialog')?.innerText.includes('.zed') && document.querySelector('[data-testid=\"plugin-detail-state\"]')?.getAttribute('data-plugin-state') === 'enabled'",
     )) === true,
     String(await evaluate("document.querySelector('.dialog')?.innerText.slice(0, 240) ?? ''")),
   );

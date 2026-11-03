@@ -89,6 +89,14 @@ test('getOpenQuestions 只返回未答的 required', () => {
   assert.equal(getOpenQuestions(q).length, requiredCount - 1);
 });
 
+const testOptions = {
+  problem: '测试问题',
+  problemId: 'test-problem',
+  kind: 'new-feature',
+  involvesUi: false,
+  host: 'unspecified',
+} as const;
+
 test('runPipelineWithAnswers 收敛后产出完整文档', async () => {
   const q = createQuestionnaire(testProblem);
   const answers: Record<string, string> = {};
@@ -99,17 +107,23 @@ test('runPipelineWithAnswers 收敛后产出完整文档', async () => {
     }
   }
 
-  const docs = await runPipelineWithAnswers(testPlan, new StubProvider(), answers);
+  const docs = await runPipelineWithAnswers(testPlan, new StubProvider(), answers, testOptions);
   assert.ok(docs.length >= 3);
   assert.ok(docs.some((d) => d.stage === 'requirements'));
   assert.ok(docs.some((d) => d.stage === 'research'));
   assert.ok(docs.some((d) => d.stage === 'design'));
 });
 
-test('未回答完时 runPipeline 只返回 questionnaire-pending', async () => {
-  const docs = await runPipeline(testPlan, new StubProvider());
-  assert.equal(docs.length, 1);
-  assert.equal(docs[0].docType, 'questionnaire-pending');
+test('草案优先：未回答时不阻塞，产出文档并标注待确认', async () => {
+  const docs = await runPipeline(testPlan, new StubProvider(), testOptions);
+  assert.equal(docs.length, 3, '未回答也产出完整文档包');
+  const requirements = docs.find((d) => d.stage === 'requirements');
+  assert.ok(requirements?.content.includes('待确认问题'));
+  assert.equal(
+    docs.some((d) => d.docType === 'questionnaire-pending'),
+    false,
+    '不再返回问卷占位文档',
+  );
 });
 
 test('buildDecisionRecords 返回已回答问题的记录', () => {
@@ -132,7 +146,7 @@ test('requirements 文档包含决策记录', async () => {
     }
   }
 
-  const docs = await runPipelineWithAnswers(testPlan, new StubProvider(), answers);
+  const docs = await runPipelineWithAnswers(testPlan, new StubProvider(), answers, testOptions);
   const requirementsDoc = docs.find((d) => d.stage === 'requirements')!;
   assert.ok(requirementsDoc.content.includes('决策记录'));
 });

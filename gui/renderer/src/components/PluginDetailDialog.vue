@@ -43,7 +43,9 @@ const findings = computed<Finding[]>(() => props.detail?.findings ?? []);
         <dl class="grid">
           <div>
             <dt>{{ $t('plugins.status') }}</dt>
-            <dd>{{ pluginStateLabel(plugin.state) }}</dd>
+            <dd data-testid="plugin-detail-state" :data-plugin-state="plugin.state">
+              {{ pluginStateLabel(plugin.state) }}
+            </dd>
           </div>
           <div>
             <dt>{{ $t('plugins.version') }}</dt>

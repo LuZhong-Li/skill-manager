@@ -1,4 +1,4 @@
-﻿import { test } from 'node:test';
+import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { classifyProblem, planPipeline, type Problem } from '../../kernel/core/pipeline/index.ts';
 
@@ -11,6 +11,19 @@ test('classifyProblem: 默认新功能', () => {
 test('classifyProblem: bug 识别', () => {
   const r = classifyProblem('登录崩溃 error 500');
   assert.equal(r.kind, 'bugfix');
+});
+
+test('classifyProblem: 中文症状词即使不含 bug/error 也判为缺陷', () => {
+  // 这些描述以前会落进 new-feature，导致缺陷类文档包按新功能口径生成
+  for (const statement of ['更新失败', '导出时丢数据', '搜索很慢', '点击没反应', '安装卡死']) {
+    assert.equal(classifyProblem(statement).kind, 'bugfix', statement);
+  }
+});
+
+test('classifyProblem: 改造意图优先于性能现象词', () => {
+  // 「性能优化」是重构意图，不该因为含「性能」被判成缺陷
+  assert.equal(classifyProblem('性能优化这个查询模块').kind, 'refactor');
+  assert.equal(classifyProblem('重构这个模块，清理技术债').kind, 'refactor');
 });
 
 test('classifyProblem: 重构识别', () => {

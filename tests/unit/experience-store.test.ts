@@ -2,16 +2,18 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   buildExperience,
+  countUnreadableExperiences,
   listExperiences,
   loadExperience,
   newExperienceId,
   saveExperience,
   searchExperiences,
   findSimilarExperience,
+  tryLoadExperience,
 } from '../../kernel/core/experience/store.ts';
 import type { ExperienceRecord } from '../../kernel/core/experience/types.ts';
 import { makeTempDir } from '../helpers/temp.ts';
@@ -91,4 +93,25 @@ test('yaml 文件包含关键字段', () => {
   assert.ok(text.includes('decisions:'));
   assert.ok(text.includes('question:'));
   assert.ok(text.includes('summary:'));
+});
+
+test('损坏的经验文件不影响列表与其他记录', () => {
+  const dir = tempDir('sm-exp-');
+  saveExperience(dir, sampleRecord('好的问题', '2026-10-31T10:00:00.000Z'));
+  const brokenId = 'exp-broken';
+  writeFileSync(join(dir, `${brokenId}.yaml`), 'kind: [unclosed\n  bad: : :\n', 'utf8');
+
+  const list = listExperiences(dir);
+  assert.equal(list.length, 1, '损坏文件被跳过');
+  assert.equal(list[0].problem, '好的问题');
+  assert.equal(countUnreadableExperiences(dir), 1);
+
+  const failed = tryLoadExperience(dir, brokenId);
+  assert.equal(failed.record, null);
+  assert.ok(failed.error !== null, '损坏文件返回错误而不是崩溃');
+  assert.throws(() => loadExperience(dir, brokenId), '显式读取损坏记录时抛错供调用方处理');
+
+  const missing = tryLoadExperience(dir, 'exp-missing');
+  assert.equal(missing.record, null);
+  assert.equal(missing.error, null, '文件不存在不算读取失败');
 });

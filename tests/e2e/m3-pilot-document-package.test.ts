@@ -37,7 +37,13 @@ test('M3 pilot: 完整文档包生成端到端', async () => {
     };
 
     // 4. 运行流水线（带回答）
-    const docs = await runPipelineWithAnswers(plan, new StubProvider(), answers);
+    const docs = await runPipelineWithAnswers(plan, new StubProvider(), answers, {
+      problem,
+      problemId: 'm3-pilot',
+      kind: classification.kind,
+      involvesUi: classification.involvesUi,
+      host: 'unspecified',
+    });
 
     // 5. 写出文档包
     writeDocumentPackage(outDir, docs);
