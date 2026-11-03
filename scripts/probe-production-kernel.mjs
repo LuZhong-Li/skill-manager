@@ -19,7 +19,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
 
 const kernel = process.argv[2];
 const expectedVersion =
@@ -281,6 +281,27 @@ async function scanThroughPipe() {
   });
 }
 
+function checkBuiltinSkills() {
+  // 内置示范 Skill 随产物分发在可执行文件同级目录；默认工作区（HOME）首次运行应安装 5 个。
+  const defaultWorkspace = join(home, '.skill-manager');
+  run(['init']);
+  const skillsDir = join(defaultWorkspace, 'skills');
+  const names = readdirSync(skillsDir).sort();
+  expect('内置示范 Skill 随产物安装（5 个）', names.length === 5, JSON.stringify(names));
+  for (const name of names) {
+    expect(
+      `内置示范 Skill ${name} 含 SKILL.md 与 skill_meta.yaml`,
+      existsSync(join(skillsDir, name, 'SKILL.md')) &&
+        existsSync(join(skillsDir, name, 'skill_meta.yaml')),
+    );
+  }
+  expect(
+    '内置示范 Skill 资产随可执行文件分发',
+    existsSync(join(dirname(kernel), 'builtin-skills')),
+    join(dirname(kernel), 'builtin-skills'),
+  );
+}
+
 function checkRoleGuard() {
   const roles = [
     {
@@ -352,6 +373,7 @@ async function main() {
   const version = run(['--version']).trim();
   expect(`发布物内核版本为 ${expectedVersion}`, version === expectedVersion, version);
   run(['init', '--workspace', workspace]);
+  checkBuiltinSkills();
 
   checkAdopt();
   const tracked = checkTrack();

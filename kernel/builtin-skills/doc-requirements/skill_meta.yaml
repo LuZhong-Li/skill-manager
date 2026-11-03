@@ -5,7 +5,7 @@ description: 结构化需求文档模板，包含用户故事和验收标准
 author: skill-manager
 license: MIT
 status: enabled
-path: doc-requirements
+path: ./skills/doc-requirements
 trigger_keywords:
   - 需求文档
   - 用户故事
@@ -20,6 +20,3 @@ targets:
     enabled: true
     file_map:
       SKILL.md: SKILL.md
-created_at: '2026-10-25T00:00:00Z'
-updated_at: '2026-10-25T00:00:00Z'
-checksum: ''

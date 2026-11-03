@@ -5,7 +5,7 @@ description: 项目里程碑计划模板，包含任务拆解和依赖关系
 author: skill-manager
 license: MIT
 status: enabled
-path: doc-plan
+path: ./skills/doc-plan
 trigger_keywords:
   - 计划文档
   - 里程碑
@@ -20,6 +20,3 @@ targets:
     enabled: true
     file_map:
       SKILL.md: SKILL.md
-created_at: '2026-10-25T00:00:00Z'
-updated_at: '2026-10-25T00:00:00Z'
-checksum: ''

@@ -15,7 +15,16 @@
  * 中间文件放在 intermediate/ 子目录，成功后清理，避免随包分发。
  */
 import { spawnSync } from 'node:child_process';
-import { copyFileSync, existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  chmodSync,
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { build } from 'esbuild';
@@ -29,6 +38,9 @@ const BUNDLE = join(WORK_DIR, 'kernel.cjs');
 const BLOB = join(WORK_DIR, 'kernel.blob');
 const SEA_CONFIG = join(WORK_DIR, 'sea-config.json');
 const EXECUTABLE = join(OUT_DIR, 'skill-manager.exe');
+/** 内置示范 Skill 随产物分发到可执行文件同级目录，供运行期按需安装。 */
+const BUILTIN_SRC = join(ROOT, 'kernel', 'builtin-skills');
+const BUILTIN_DST = join(OUT_DIR, 'builtin-skills');
 
 function fail(message) {
   console.error(`内核构建失败：${message}`);
@@ -49,10 +61,25 @@ function run(command, args, options = {}) {
   return result;
 }
 
+/**
+ * 逐文件递归复制。刻意不用 cpSync：Windows Node v24 在源路径含非 ASCII 字符时
+ * 会原生崩溃（0xC0000409），try/catch 无法捕获；内核侧的同类修复见
+ * kernel/core/bootstrap/builtin-skills.ts。
+ */
+function copyTree(src, dst) {
+  mkdirSync(dst, { recursive: true });
+  for (const entry of readdirSync(src, { withFileTypes: true })) {
+    const from = join(src, entry.name);
+    const to = join(dst, entry.name);
+    if (entry.isDirectory()) copyTree(from, to);
+    else if (entry.isFile()) copyFileSync(from, to);
+  }
+}
+
 mkdirSync(WORK_DIR, { recursive: true });
 
 // 一、打包：内核只依赖 yaml，一并打进产物，运行期不需要额外的 node_modules
-await build({
+const bundle = await build({
   entryPoints: [join(ROOT, 'kernel', 'entry', 'exe.ts')],
   outfile: BUNDLE,
   bundle: true,
@@ -60,9 +87,17 @@ await build({
   target: 'node22',
   // 单文件可执行只支持 CommonJS，因此内核的两个入口都不使用顶层 await
   format: 'cjs',
-  logLevel: 'info',
+  logLevel: 'silent',
   banner: { js: '/* 由 scripts/build-kernel.mjs 生成，请勿手工修改 */' },
 });
+for (const warning of bundle.warnings) {
+  console.warn(`打包警告：${warning.text}（${warning.location?.file ?? ''}）`);
+}
+// CJS 形态下 import.meta 为空对象：模块顶层一旦用它求值，可执行文件启动即崩溃。
+// 这类警告必须视为构建失败，而不是随产物发出（v0.8.0 缺陷的根因）。
+if (bundle.warnings.some((warning) => warning.id === 'empty-import-meta')) {
+  fail('产物使用了 import.meta：CJS 单文件可执行形态不支持，请改用运行期路径探测');
+}
 
 // 二、生成代码块
 writeFileSync(
@@ -101,5 +136,28 @@ run(
 const signed = adHocSignMac({ executable: EXECUTABLE });
 if (signed.applied) console.log(`已对内核可执行文件 ad-hoc 重签：${signed.args.join(' ')}`);
 
+// 四、内置示范 Skill 随产物分发到可执行文件同级目录（SEA 形态按该目录解析）
+if (!existsSync(BUILTIN_SRC)) fail(`缺少内置示范 Skill 目录：${BUILTIN_SRC}`);
+rmSync(BUILTIN_DST, { recursive: true, force: true });
+copyTree(BUILTIN_SRC, BUILTIN_DST);
+
+// 五、产出自检：可执行文件必须能启动并回答 --version。
+// 这是 CJS/SEA 形态唯一的端到端守卫——单元测试只覆盖源码形态，拦不住打包期缺陷。
+if (process.platform !== 'win32') chmodSync(EXECUTABLE, 0o755);
+const expectedVersion = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).version;
+const selfCheck = spawnSync(EXECUTABLE, ['--version'], { cwd: OUT_DIR, encoding: 'utf8' });
+if (selfCheck.status !== 0) {
+  fail(
+    `可执行文件自检失败（--version 退出码 ${String(selfCheck.status)}）：` +
+      `${String(selfCheck.stdout ?? '')}${String(selfCheck.stderr ?? '')}`,
+  );
+}
+if (selfCheck.stdout.trim() !== expectedVersion) {
+  fail(
+    `可执行文件 --version 输出 ${selfCheck.stdout.trim()} 与 package.json ${expectedVersion} 不一致`,
+  );
+}
+
 rmSync(WORK_DIR, { recursive: true, force: true });
 console.log(`内核可执行文件已生成：${EXECUTABLE}`);
+console.log(`内置示范 Skill 已随产物分发：${BUILTIN_DST}`);

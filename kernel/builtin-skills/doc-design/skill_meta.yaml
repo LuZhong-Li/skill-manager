@@ -5,7 +5,7 @@ description: 技术设计文档模板，包含架构概览和接口定义
 author: skill-manager
 license: MIT
 status: enabled
-path: doc-design
+path: ./skills/doc-design
 trigger_keywords:
   - 设计文档
   - 技术方案
@@ -20,6 +20,3 @@ targets:
     enabled: true
     file_map:
       SKILL.md: SKILL.md
-created_at: '2026-10-25T00:00:00Z'
-updated_at: '2026-10-25T00:00:00Z'
-checksum: ''

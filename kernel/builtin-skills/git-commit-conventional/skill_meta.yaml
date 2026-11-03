@@ -5,7 +5,7 @@ description: 标准化 Git 提交信息格式，支持自动生成 CHANGELOG
 author: skill-manager
 license: MIT
 status: enabled
-path: git-commit-conventional
+path: ./skills/git-commit-conventional
 trigger_keywords:
   - 提交规范
   - conventional commits
@@ -20,6 +20,3 @@ targets:
     enabled: true
     file_map:
       SKILL.md: SKILL.md
-created_at: '2026-10-25T00:00:00Z'
-updated_at: '2026-10-25T00:00:00Z'
-checksum: ''
