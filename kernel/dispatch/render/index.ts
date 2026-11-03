@@ -83,9 +83,204 @@ function appendOutcome(
   const inventory = inventoryDataOf(result);
   if (inventory !== null) {
     lines.push(...renderInventoryHuman(inventory, color, verbose));
-  } else if (result.ok && result.findings.length === 0 && result.changes.length === 0) {
+    return;
+  }
+  const pipeline = pipelineDataOf(result);
+  if (pipeline !== null) {
+    lines.push(...renderPipelineHuman(pipeline, color));
+    return;
+  }
+  const experiences = experiencesDataOf(result);
+  if (experiences !== null) {
+    lines.push(...renderExperiencesHuman(experiences, color));
+    return;
+  }
+  const record = experienceRecordOf(result);
+  if (record !== null) {
+    lines.push(...renderExperienceRecord(record, color));
+    return;
+  }
+  if (result.ok && result.findings.length === 0 && result.changes.length === 0) {
     lines.push('  无变更');
   }
+}
+
+interface PipelineData {
+  output_dir: string;
+  provider: string;
+  host: string;
+  documents: string[];
+  dry_run: boolean;
+  experience_id: string | null;
+  evidence?: {
+    probed: boolean;
+    root: string | null;
+    stack: string[];
+    suspects: string[];
+    related_tests: string[];
+    checks: string[];
+    warnings: string[];
+  };
+  experience_adapted?: {
+    sample_size: number;
+    prefilled_questions: string[];
+    skipped_stages: Array<{ stage: string }>;
+  };
+}
+
+/**
+ * pipeline run 载荷识别：以 output_dir + documents 为特征，避免与其他指令的 data 混淆。
+ */
+function pipelineDataOf(result: Result<unknown>): PipelineData | null {
+  const data = result.data;
+  if (data === null || typeof data !== 'object') return null;
+  const record = data as Record<string, unknown>;
+  if (typeof record['output_dir'] !== 'string' || !Array.isArray(record['documents'])) return null;
+  return data as unknown as PipelineData;
+}
+
+/** 证据段落：探查到什么就说什么，没探查就如实说明可开启。 */
+function renderEvidenceLines(evidence: PipelineData['evidence'], color: boolean): string[] {
+  if (evidence === undefined || !evidence.probed) {
+    return [
+      paint(
+        '  证据：未探查仓库（结论均属推断；加 --probe-root <仓库路径> 可基于真实代码处理）',
+        'dim',
+        color,
+      ),
+    ];
+  }
+  const lines = [`  证据：已探查 ${evidence.root ?? ''}`.trimEnd()];
+  if (evidence.stack.length > 0) lines.push(`    技术栈：${evidence.stack.join(' / ')}`);
+  if (evidence.suspects.length > 0) {
+    lines.push(`    可疑文件：${evidence.suspects.slice(0, 5).join('、')}`);
+  } else {
+    lines.push('    可疑文件：未定位到相关文件（文档内已标注为推断）');
+  }
+  if (evidence.checks.length > 0)
+    lines.push(`    建议检查：${evidence.checks.slice(0, 3).join(' | ')}`);
+  for (const warning of evidence.warnings)
+    lines.push(paint(`    告警：${warning}`, 'yellow', color));
+  return lines;
+}
+
+/** 经验段落：只有在真的用到历史经验时才输出。 */
+function renderAdaptedLines(adapted: PipelineData['experience_adapted']): string[] {
+  if (adapted === undefined || (adapted.sample_size === 0 && adapted.skipped_stages.length === 0))
+    return [];
+  const parts = [`样本 ${String(adapted.sample_size)} 条`];
+  if (adapted.prefilled_questions.length > 0) {
+    parts.push(`预填回答 ${adapted.prefilled_questions.join('、')}`);
+  }
+  if (adapted.skipped_stages.length > 0) {
+    parts.push(`按经验跳过 ${adapted.skipped_stages.map((item) => item.stage).join('、')}`);
+  }
+  return [`  经验：${parts.join('，')}`];
+}
+
+/**
+ * pipeline run 的人类可读摘要。
+ *
+ * 这条指令的价值全在载荷里，但默认输出曾经只有「成功 / 无变更」——
+ * 用户看不出产出了什么、依据是什么。这里把三件事直接摆出来：
+ * 产出了哪些文档、是否基于仓库证据、经验回归用到了什么。
+ */
+function renderPipelineHuman(data: PipelineData, color: boolean): string[] {
+  const count = data.documents.filter((path) => !path.endsWith('INDEX.md')).length;
+  const suffix = data.dry_run ? '（预演，未写入）' : '';
+  const lines = [
+    `  文档包：${String(count)} 份文档 -> ${data.output_dir}${suffix}`,
+    ...data.documents.map((path) => paint(`    ${path}`, 'dim', color)),
+    ...renderEvidenceLines(data.evidence, color),
+    ...renderAdaptedLines(data.experience_adapted),
+  ];
+  if (data.experience_id !== null)
+    lines.push(paint(`  经验已记录：${data.experience_id}`, 'dim', color));
+  return lines;
+}
+
+interface ExperiencesData {
+  count: number;
+  keyword?: string;
+  experiences: Array<{
+    id: string;
+    problem: string;
+    kind: string;
+    host?: string;
+    createdAt: string;
+    stages: string[];
+  }>;
+}
+
+function experiencesDataOf(result: Result<unknown>): ExperiencesData | null {
+  const data = result.data;
+  if (data === null || typeof data !== 'object') return null;
+  const record = data as Record<string, unknown>;
+  const items = record['experiences'];
+  if (!Array.isArray(items) || typeof record['count'] !== 'number') return null;
+  return data as unknown as ExperiencesData;
+}
+
+/** experience show 的人类可读摘要：单条记录原样排版。 */
+function renderExperienceRecord(record: Record<string, unknown>, color: boolean): string[] {
+  const lines: string[] = [];
+  const field = (key: string): string => {
+    const value = record[key];
+    return value === undefined || value === null ? '' : String(value);
+  };
+  lines.push(`  经验：${field('id')}`);
+  lines.push(`    问题：${field('problem')}`);
+  lines.push(`    分类：${field('kind')}；宿主：${field('host') || 'unspecified'}`);
+  lines.push(`    环节：${field('stages')}`);
+  const decisions = record['decisions'];
+  if (Array.isArray(decisions) && decisions.length > 0) {
+    lines.push('    决策：');
+    for (const item of decisions) {
+      const decision = item as Record<string, unknown>;
+      lines.push(`      ${String(decision['question'])} → ${String(decision['answer'])}`);
+    }
+  }
+  const evidence = record['evidence'];
+  if (evidence !== null && typeof evidence === 'object') {
+    const summary = evidence as Record<string, unknown>;
+    const suspects = Array.isArray(summary['suspects']) ? summary['suspects'] : [];
+    lines.push(`    证据：探查 ${String(summary['root'] ?? '')}`);
+    lines.push(
+      suspects.length === 0
+        ? '      未定位到相关文件'
+        : `      可疑文件：${suspects.slice(0, 5).map(String).join('、')}`,
+    );
+  } else {
+    lines.push(paint('    证据：本记录未探查仓库', 'dim', color));
+  }
+  return lines;
+}
+
+/** experience show 的载荷识别：单条经验记录（含 id / problem / kind / createdAt）。 */
+function experienceRecordOf(result: Result<unknown>): Record<string, unknown> | null {
+  const data = result.data;
+  if (data === null || typeof data !== 'object') return null;
+  const record = data as Record<string, unknown>;
+  if (typeof record['id'] !== 'string' || typeof record['problem'] !== 'string') return null;
+  // 必须带经验独有的字段，避免把 Skill 详情之类的载荷误判为经验
+  if (typeof record['createdAt'] !== 'string' || typeof record['kind'] !== 'string') return null;
+  if (Array.isArray(record['experiences'])) return null;
+  return record;
+}
+
+/** experience list / search 的人类可读摘要。 */
+function renderExperiencesHuman(data: ExperiencesData, color: boolean): string[] {
+  const scope = data.keyword === undefined ? '全部经验' : `匹配「${data.keyword}」`;
+  if (data.count === 0) {
+    return [paint(`  ${scope}：没有记录（每次 pipeline run 会累计一条）`, 'dim', color)];
+  }
+  const lines = [`  ${scope}：${String(data.count)} 条`];
+  for (const item of data.experiences) {
+    const host = item.host ?? 'unspecified';
+    lines.push(`    ${item.id}  [${item.kind}/${host}]  ${item.problem}`);
+  }
+  lines.push(paint('  提示：详情用 experience show <id>', 'dim', color));
+  return lines;
 }
 
 interface InventoryData {

@@ -34,6 +34,8 @@ export const BOOLEAN_OPTIONS = new Set([
   'bulk',
   'rename',
   'force',
+  // pipeline run：探查仓库证据
+  'probe',
 ]);
 
 /**
@@ -77,6 +79,8 @@ export const VALUE_OPTIONS = new Set([
   'llm-temperature',
   // 经验回归：pipeline run 预填相似经验
   'experience',
+  // pipeline run 证据探查的仓库根（与 --workspace 正交）
+  'probe-root',
   // experience 命令专用
   'query',
 ]);

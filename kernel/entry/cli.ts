@@ -17,7 +17,11 @@ import { pathToFileURL } from 'node:url';
 import { createInterface } from 'node:readline';
 import type { Interaction } from '../dispatch/policy/index.ts';
 import { resolveWorkspaceRoot, layoutOf } from '../store/workspace/index.ts';
-import { ensureBuiltinSkills } from '../core/bootstrap/builtin-skills.ts';
+import {
+  ensureBuiltinSkills,
+  resolveBuiltinSkillsDir,
+  shouldInstallBuiltinSkills,
+} from '../core/bootstrap/builtin-skills.ts';
 
 /** 协调世界时秒级时间戳 */
 function utcNow(): string {
@@ -50,15 +54,6 @@ export async function run(
   argv: string[],
   interaction: Interaction = createStdioInteraction(),
 ): Promise<number> {
-  // 首次运行时自动安装内置示范 Skill
-  try {
-    const workspaceRoot = resolveWorkspaceRoot();
-    const layout = layoutOf(workspaceRoot);
-    ensureBuiltinSkills(layout.skillsDir);
-  } catch {
-    // 内置安装失败不阻塞主流程
-  }
-
   const { args, findings } = parseArgs(argv);
   const json = flag(args, 'json');
   const machine = flag(args, 'machine');
@@ -80,6 +75,8 @@ export async function run(
     return result.exit_code;
   }
 
+  maybeInstallBuiltinSkills(args);
+
   const result = await dispatch({ args, now: utcNow(), interaction });
   const rawReport = rawReportOf(args.command, args, result);
   if (rawReport !== null) {
@@ -90,6 +87,32 @@ export async function run(
     `${render(result, { json, machine, color, verbose: flag(args, 'verbose') })}\n`,
   );
   return result.exit_code;
+}
+
+/**
+ * 首次运行时把内置示范 Skill 安装到默认工作区。
+ *
+ * 只对默认工作区生效，且只读命令（全机盘点 / dry-run）、帮助与版本不触发写入；
+ * 判定逻辑见 `shouldInstallBuiltinSkills`。失败不阻塞主流程：演示技能属于附赠能力，
+ * 缺失不应让真实指令失败。
+ */
+function maybeInstallBuiltinSkills(args: ReturnType<typeof parseArgs>['args']): void {
+  try {
+    const workspaceRoot = resolveWorkspaceRoot(option(args, 'workspace'));
+    const installable = shouldInstallBuiltinSkills({
+      workspaceRoot,
+      defaultWorkspaceRoot: resolveWorkspaceRoot(),
+      command: args.command,
+      inventory: flag(args, 'inventory'),
+      dryRun: flag(args, 'dry-run'),
+    });
+    if (!installable) return;
+    const entryPath = process.argv[1];
+    const builtinDir = resolveBuiltinSkillsDir(entryPath === undefined ? {} : { entryPath });
+    ensureBuiltinSkills(layoutOf(workspaceRoot).skillsDir, builtinDir ?? undefined);
+  } catch {
+    // 内置安装失败不阻塞主流程
+  }
 }
 
 function rawReportOf(
@@ -133,8 +156,8 @@ function helpText(): string {
     '  import <路径>           从备份清单恢复索引记录；已存在的标识一律跳过，不覆盖',
     '  restore <标识>          从备份载体把内容写回中心库并重分发副本；省略时间戳时取最新',
     '  reconcile               对盘点后的宿主副本生成显式动作计划（默认预览）',
-    '  pipeline run            运行文档流水线：问题 -> 分类 -> 规划 -> 文档包',
-    '  experience list         列出历史处理经验（累计的每次问题处理）',
+    '  pipeline run            处理问题：分类 -> 规划 -> 生成文档包（内置本地能力，无需外部服务）',
+    '  experience list         列出历史处理经验（累计的每次问题处理，含宿主）',
     '  experience search       按关键词检索相似经验',
     '  experience show <id>    查看单条经验详情',
     '',
@@ -142,12 +165,15 @@ function helpText(): string {
     '  --problem <描述>        输入问题描述（必填）',
     '  --output-dir <路径>     文档包输出目录（必填）',
     '  --answers q1=a1         问题答案，可重复（如 --answers q1=a --answers q2=b）',
+    '  --host <宿主>           经验画像归属宿主；缺省按 SKILL_MANAGER_HOST 与环境特征识别',
     '  --experience <关键词>   检索相似经验并预填问答（可选）',
-    '  --llm-provider <类型>   LLM provider：stub/doubao/claude/openai（默认 stub）',
-    '  --llm-api-key <key>     LLM API key',
+    '  --llm-provider <类型>   LLM provider：local/doubao/claude/openai（默认 local，内置本地生成）',
+    '  --llm-api-key <key>     外部 provider 的 API key；缺省时退回内置本地生成',
     '  --llm-base-url <url>    LLM API base URL（可选）',
     '  --llm-model <model>     LLM model name（可选）',
     '  --llm-temperature <num> 温度参数 0-2，默认 0.7（可选）',
+    '  --probe-root <路径>     探查该路径的仓库代码，把定位结果写进文档（只读，不执行命令）',
+    '  --probe                 未给 --probe-root 时探查当前目录',
     '',
     'experience 专用选项：',
     '  --query <关键词>        experience search 的检索关键词',

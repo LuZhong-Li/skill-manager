@@ -3,24 +3,26 @@
 import { CODES } from '@skill-manager/contract';
 import { finding } from '../../../store/findings.ts';
 import { buildResult, type Result } from '../../result/index.ts';
-import { option } from '../../parsers/index.ts';
-import { layoutOf, resolveWorkspaceRoot } from '../../../store/workspace/index.ts';
+import { option, type ParsedArgs } from '../../parsers/index.ts';
+import { layoutOf } from '../../../store/workspace/index.ts';
+import { workspaceRootOf } from '../../shared/options.ts';
 import {
   listExperiences,
-  loadExperience,
   searchExperiences,
+  tryLoadExperience,
 } from '../../../core/experience/store.ts';
 import type { CommandHandler, CommandSpec } from '../types.ts';
 
-function experiencesDir(): string {
-  return layoutOf(resolveWorkspaceRoot()).experiencesDir;
+/** 经验目录：与 pipeline 一致，优先取 --workspace，其次环境变量与默认工作区。 */
+function experiencesDirOf(args: ParsedArgs): string {
+  return layoutOf(workspaceRootOf(args)).experiencesDir;
 }
 
 /** experience list锛氬垪鍑哄叏閮ㄥ巻鍙茬粡楠岋紙鍊掑簭锛夈€?*/
 const listHandler: CommandHandler = async (context): Promise<Result<unknown>> => {
   const limitRaw = option(context.args, 'limit');
   const limit = limitRaw ? Math.max(1, Math.min(50, parseInt(limitRaw, 10) || 10)) : 10;
-  const records = listExperiences(experiencesDir()).slice(0, limit);
+  const records = listExperiences(experiencesDirOf(context.args)).slice(0, limit);
   return buildResult(context.args.command, [], [], {
     data: {
       count: records.length,
@@ -30,6 +32,7 @@ const listHandler: CommandHandler = async (context): Promise<Result<unknown>> =>
         kind: r.kind,
         stages: r.stages,
         createdAt: r.createdAt,
+        host: r.host ?? 'unspecified',
         provider: r.provider,
       })),
     },
@@ -49,7 +52,7 @@ const searchHandler: CommandHandler = async (context): Promise<Result<unknown>> 
       }),
     ]);
   }
-  const records = searchExperiences(experiencesDir(), keyword);
+  const records = searchExperiences(experiencesDirOf(context.args), keyword);
   return buildResult(context.args.command, [], [], {
     data: {
       keyword,
@@ -60,6 +63,7 @@ const searchHandler: CommandHandler = async (context): Promise<Result<unknown>> 
         kind: r.kind,
         stages: r.stages,
         createdAt: r.createdAt,
+        host: r.host ?? 'unspecified',
       })),
     },
   });
@@ -78,8 +82,18 @@ const showHandler: CommandHandler = async (context): Promise<Result<unknown>> =>
       }),
     ]);
   }
-  const record = loadExperience(experiencesDir(), id);
-  if (record === null) {
+  const result = tryLoadExperience(experiencesDirOf(context.args), id);
+  if (result.error !== null) {
+    return buildResult(context.args.command, [
+      finding(CODES.IO_FAILED, {
+        source: 'experience',
+        target: id,
+        message: `经验文件无法读取：${id}`,
+        remedy: '该经验文件可能已损坏；可删除 experiences/ 下的对应 .yaml 后重试',
+      }),
+    ]);
+  }
+  if (result.record === null) {
     return buildResult(context.args.command, [
       finding(CODES.INPUT_INVALID_ARG, {
         source: 'experience',
@@ -89,7 +103,7 @@ const showHandler: CommandHandler = async (context): Promise<Result<unknown>> =>
       }),
     ]);
   }
-  return buildResult(context.args.command, [], [], { data: record });
+  return buildResult(context.args.command, [], [], { data: result.record });
 };
 
 /** 娉ㄥ唽 experience 鍛戒护銆?*/
