@@ -1,38 +1,37 @@
-﻿/** IntelligenceProvider 内置实现。 */
+/** IntelligenceProvider 内置实现：人工兜底包装。 */
 
-import type { IntelligenceProvider } from './types.ts';
-
-/**
- * Stub 实现：直接返回模板占位文本，不调用外部 API。
- * 用于 M0/M1 开发测试。
- */
-export class StubProvider implements IntelligenceProvider {
-  readonly name = 'stub';
-
-  async generate(prompt: string, context: Record<string, unknown>): Promise<string> {
-    const topic = (context.topic as string) || '未指定主题';
-    return `# ${prompt}\n\n待填写：${topic}\n`;
-  }
-}
+import type { GenerationContext, IntelligenceProvider } from './types.ts';
+import { getMetaSkill } from './meta-skills.ts';
 
 /**
- * 人工兜底实现：包装另一个 provider，调用失败时返回空白人工模板。
- * 不抛异常，保证流水线不中断。
+ * 人工兜底实现：包装另一个 provider，调用失败时返回可读的人工模板。
+ * 不抛异常，保证流水线不中断。成功时沿用内层 provider 名称，便于在结果里
+ * 区分「内置本地生成」与「外部 LLM 生成」。
  */
 export class HumanFallbackProvider implements IntelligenceProvider {
-  readonly name = 'human-fallback';
   private readonly inner: IntelligenceProvider;
 
   constructor(inner: IntelligenceProvider) {
     this.inner = inner;
   }
 
-  async generate(prompt: string, context: Record<string, unknown>): Promise<string> {
+  get name(): string {
+    return this.inner.name;
+  }
+
+  async generate(prompt: string, context: GenerationContext): Promise<string> {
     try {
       return await this.inner.generate(prompt, context);
     } catch {
-      const docType = (context.docType as string) || '文档';
-      return `# ${docType}\n\n（请人工填写）\n`;
+      const docType = context.docType === '' ? '文档' : context.docType;
+      const stage = context.stage;
+      let instruction = '（请人工填写）';
+      try {
+        instruction = getMetaSkill(stage).instruction;
+      } catch {
+        // 未知环节时沿用通用提示
+      }
+      return `# ${docType}\n\n## 生成失败，已降级为人工模板\n\n> 环节：${stage}\n\n${instruction}\n\n（请人工填写）\n`;
     }
   }
 }
