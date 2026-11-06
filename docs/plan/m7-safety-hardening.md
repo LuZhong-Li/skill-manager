@@ -105,11 +105,15 @@ v0.9.0 已将问题处理、经验回归与只读代码探查发布到主干，�
 
 ### T5：全量验收与发布门槛
 
-- [ ] `npm test`、`npm run check`、`npm run typecheck`、`npm run lint`、`npm run format:check` 全绿。
-- [ ] 新增安全测试均在常规或明确独立的安全测试入口中可复现；不会误把慢基准纳入常规套件。
-- [ ] 完成 Windows 打包内核与 GUI 冒烟；运行 GUI 时清除 `ELECTRON_RUN_AS_NODE`。
-- [ ] 若触及文件复制、归档解压、内核打包或 Node 运行时，按 `docs/benchmark/report-0.1.0.md` 的新规则补当前版本性能基线；否则发布 checklist 明确记录不适用理由。
-- [ ] 安全设计、CLI 契约、CHANGELOG 与风险登记同步更新。
+**执行状态**：**已完成（2026-11-06）**。结果与证据汇总在 [`m7-acceptance.md`](./m7-acceptance.md)：
+961 项常规测试 960 通过 / 1 平台跳过，三门禁全绿；内核与桌面构建、界面冒烟 94/94、
+生产内核探测与 Windows portable 打包均通过。性能为冒烟级刷新，完整再基线留到正式发版。
+
+- [x] `npm test`、`npm run check`、`npm run typecheck`、`npm run lint`、`npm run format:check` 全绿。
+- [x] 新增安全测试均在常规或明确独立的安全测试入口中可复现；不会误把慢基准纳入常规套件。
+- [x] 完成 Windows 打包内核与 GUI 冒烟；运行 GUI 时清除 `ELECTRON_RUN_AS_NODE`。
+- [x] 若触及文件复制、归档解压、内核打包或 Node 运行时，按 `docs/benchmark/report-0.1.0.md` 的新规则补当前版本性能基线；否则发布 checklist 明确记录不适用理由。
+- [x] 安全设计、CLI 契约、CHANGELOG 与风险登记同步更新。
 
 ## 4. 依赖关系
 
