@@ -6,8 +6,12 @@
  */
 import { CODES } from '@skill-manager/contract';
 import { finding } from '../../store/findings.ts';
+import { toKernelError } from '../../store/errors.ts';
+import { withWriterLock } from '../../store/locking/index.ts';
+import { layoutOf } from '../../store/workspace/index.ts';
 import { buildResult, type Result } from '../result/index.ts';
-import { option } from '../parsers/index.ts';
+import { flag, option } from '../parsers/index.ts';
+import { workspaceRootOf } from '../shared/options.ts';
 import { scanHandler } from '../scan/index.ts';
 import {
   configGetHandler,
@@ -92,6 +96,36 @@ const KIND_COMMANDS = new Set([
   'disable',
 ]);
 
+/**
+ * 会写工作区（索引、中心库、宿主副本、账本）的指令。
+ *
+ * 跨进程互斥统一在路由层加锁：逐个处理器自行加锁容易漏掉插件、导入、
+ * 恢复、宿主卸载这类路径，而漏掉一处就等于没有并发保护。
+ * 只读指令与预演不入此表——它们不写盘，加锁只会白白串行化。
+ */
+const WRITE_COMMANDS = new Set([
+  'init',
+  'scan',
+  'install',
+  'uninstall',
+  'enable',
+  'disable',
+  'update',
+  'import',
+  'restore',
+  'reconcile',
+  'config set',
+  'pipeline run',
+]);
+
+/** 该次调用是否会写盘：预演与只读盘点不写，因而不需要写锁 */
+function needsWriteLock(command: string, args: Parameters<typeof option>[0]): boolean {
+  if (!WRITE_COMMANDS.has(command)) return false;
+  if (flag(args, 'dry-run')) return false;
+  if (command === 'scan' && flag(args, 'inventory')) return false;
+  return true;
+}
+
 /** 指令路由：未注册的指令返回输入类错误 */
 export async function dispatch(context: CommandContext): Promise<Result<unknown>> {
   const kind = option(context.args, 'kind');
@@ -128,5 +162,18 @@ export async function dispatch(context: CommandContext): Promise<Result<unknown>
       }),
     ]);
   }
-  return await handler(context);
+  if (!needsWriteLock(context.args.command, context.args)) return await handler(context);
+  try {
+    return await withWriterLock(layoutOf(workspaceRootOf(context.args)), () => handler(context));
+  } catch (error) {
+    const kernelError = toKernelError(error, CODES.IO_FAILED);
+    return buildResult(context.args.command, [
+      finding(kernelError.code, {
+        source: kernelError.source,
+        target: kernelError.target,
+        message: kernelError.message,
+        remedy: kernelError.remedy,
+      }),
+    ]);
+  }
 }
