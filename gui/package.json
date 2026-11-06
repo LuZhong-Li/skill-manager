@@ -19,7 +19,7 @@
     "pack:linux": "node ../scripts/pack.mjs --platform linux"
   },
   "devDependencies": {
-    "@skill-manager/contract": "0.7.0",
+    "@skill-manager/contract": "0.9.2",
     "@vitejs/plugin-vue": "^6.0.10",
     "electron": "^44.7.2",
     "electron-builder": "^26.15.3",
