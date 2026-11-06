@@ -68,6 +68,23 @@ experience 能力（审计 P0，属产品化工作），性能基线为「冒烟
 不在此处直接替换 report-0.1.0 的历史数据，避免把冒烟采样当成可比基线；
 正式发版前按该报告的规则补完整再基线。
 
+## 4.1 发版记录：v0.9.1
+
+本批以 **v0.9.1** 收口并发布（0.9.1 只含安全硬化与文档，无新增界面功能）。
+
+| 项目 | 值 |
+| --- | --- |
+| 合并方式 | `main` 快进合并（`8f807bb`），随后版本提交 `24288c3` |
+| tag | `v0.9.1`（轻量 tag，指向 `24288c3`） |
+| Release | https://github.com/LuZhong-Li/skill-manager/releases/tag/v0.9.1 （非 draft / 非 prerelease） |
+| 资产 | `skill-manager-0.9.1-portable.exe`，114,264,366 字节 |
+| SHA256 | `374B6ACBCDC4993CE69C16F031FC77FD26C13993A1E36D320B55F63963B4469A`（与 Release digest 一致） |
+| 自用测试包 | `D:\skill-manager-app\` 已更新为 0.9.1（启动器指向新产物，旧 0.9.0 产物已移除） |
+| 版本守卫 | `release-guard.mjs --tag v0.9.1` 通过（tag / CHANGELOG / package.json 三方一致） |
+
+发布前复跑结果：内核冒烟 `version 0.9.1`、生产内核探测 `PRODUCTION_KERNEL_RESULT=ok version=0.9.1`、
+界面冒烟 94/94（连续两次）。
+
 ## 5. 契约与文档同步
 
 - **CLI 契约**：指令数、选项与退出码均未变化，`check:contract` 通过；本次只新增环境变量旋钮
