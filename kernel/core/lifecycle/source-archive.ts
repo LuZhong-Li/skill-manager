@@ -1,13 +1,29 @@
 /** 归档与本地仓库解包的安全读取。 */
 import { spawn } from 'node:child_process';
-import { existsSync, lstatSync, mkdirSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import {
+  createWriteStream,
+  existsSync,
+  lstatSync,
+  mkdirSync,
+  readdirSync,
+  rmSync,
+  statSync,
+} from 'node:fs';
 import { dirname, isAbsolute, join, relative } from 'node:path';
 import { pipeline } from 'node:stream/promises';
+import { Transform } from 'node:stream';
 import * as tar from 'tar';
 import StreamZip from 'node-stream-zip';
 import { CODES } from '@skill-manager/contract';
 import { KernelError } from '../../store/errors.ts';
 import { META_FILE_NAME } from '../metadata/constants.ts';
+import {
+  ArchiveBudget,
+  assertArchiveFileSize,
+  budgetExceeded,
+  DEFAULT_ARCHIVE_LIMITS,
+  type ArchiveLimits,
+} from './source-archive-budget.ts';
 import { sourceError } from './source-shared.ts';
 
 function assertEntrySafe(name: string, archive: string): void {
@@ -82,7 +98,7 @@ export function assertNoSymlinks(root: string, base = ''): void {
   }
 }
 
-async function assertTarSafe(file: string, target: string): Promise<void> {
+async function assertTarSafe(file: string, target: string, budget?: ArchiveBudget): Promise<void> {
   let failure: unknown = null;
   await tar.t({
     file,
@@ -91,6 +107,8 @@ async function assertTarSafe(file: string, target: string): Promise<void> {
       try {
         assertEntrySafe(entry.path, target);
         assertEntryTypeSafe(entry, entry.path, target);
+        // TAR 的头部大小即实际读取长度，提前计入预算就是准确的字节数检查
+        budget?.admitEntry(entry.size ?? 0, entry.size ?? 0);
       } catch (error) {
         failure = error;
       }
@@ -99,9 +117,14 @@ async function assertTarSafe(file: string, target: string): Promise<void> {
   if (failure !== null) throw failure;
 }
 
-/** 解压 tar 归档；条目在过滤器里逐条校验 */
-export async function extractTar(archive: string, dest: string): Promise<void> {
-  await assertTarSafe(archive, archive);
+/** 解压 tar 归档；条目在过滤器里逐条校验，大小按头部声明预先计入预算 */
+export async function extractTar(
+  archive: string,
+  dest: string,
+  limits: ArchiveLimits = DEFAULT_ARCHIVE_LIMITS,
+): Promise<void> {
+  assertArchiveFileSize(archive, limits);
+  await assertTarSafe(archive, archive, new ArchiveBudget(limits, archive));
   await tar.x({
     file: archive,
     cwd: dest,
@@ -139,8 +162,19 @@ export function classifyArchiveError(error: unknown, archive: string): KernelErr
   );
 }
 
-/** 解压 zip 归档：逐条目校验后用节点流写出，不调用库的批量解压 */
-export async function extractZip(archive: string, dest: string): Promise<void> {
+/**
+ * 解压 zip 归档：逐条目校验后用节点流写出，不调用库的批量解压。
+ *
+ * 不信任中心目录声明的未压缩大小（可被伪造），因此采用流式写出并
+ * 按实际流出字节计数：一旦越过单条或累计预算立即中止并删除半截文件。
+ */
+export async function extractZip(
+  archive: string,
+  dest: string,
+  limits: ArchiveLimits = DEFAULT_ARCHIVE_LIMITS,
+): Promise<void> {
+  assertArchiveFileSize(archive, limits);
+  const budget = new ArchiveBudget(limits, archive);
   const zip = new StreamZip.async({ file: archive });
   try {
     const entries = await zip.entries();
@@ -151,16 +185,53 @@ export async function extractZip(archive: string, dest: string): Promise<void> {
       const target = entry.name.replace(/\\/g, '/');
       if (entry.isDirectory) {
         ensureRealPath(dest, `${target}/x`);
+        budget.admitEntry(entry.compressedSize, 0);
         continue;
       }
       ensureRealPath(dest, target);
-      const data = await zip.entryData(entry.name);
-      writeFileSync(join(dest, ...target.split('/')), data);
+      budget.admitEntry(entry.compressedSize, entry.size);
+      await writeZipEntry(zip, entry, join(dest, ...target.split('/')), budget, limits);
     }
   } catch (error) {
     throw classifyArchiveError(error, archive);
   } finally {
     await zip.close();
+  }
+}
+
+/** 写出单个 zip 条目；实际字节数越过预算则中止并清理半截文件 */
+async function writeZipEntry(
+  zip: StreamZip.StreamZipAsync,
+  entry: StreamZip.ZipEntry,
+  target: string,
+  budget: ArchiveBudget,
+  limits: ArchiveLimits,
+): Promise<void> {
+  let written = 0;
+  const guard = new Transform({
+    transform(chunk: Buffer, _encoding, callback) {
+      written += chunk.length;
+      try {
+        if (written > limits.maxEntryBytes) {
+          throw budgetExceeded(
+            target,
+            `归档单条解压大小超过上限：${String(written)} 字节，上限 ${String(limits.maxEntryBytes)} 字节`,
+            '该归档含超大条目，已中止解压；请确认内容是否符合预期',
+          );
+        }
+        budget.charge(chunk.length);
+      } catch (error) {
+        callback(error as Error);
+        return;
+      }
+      callback(null, chunk);
+    },
+  });
+  try {
+    await pipeline(await zip.stream(entry), guard, createWriteStream(target));
+  } catch (error) {
+    rmSync(target, { force: true });
+    throw error;
   }
 }
 

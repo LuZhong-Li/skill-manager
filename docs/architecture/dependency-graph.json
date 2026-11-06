@@ -771,6 +771,12 @@
       "layer": "core"
     },
     {
+      "path": "kernel/core/lifecycle/source-archive-budget.ts",
+      "kind": "source",
+      "region": "kernel-core",
+      "layer": "core"
+    },
+    {
       "path": "kernel/core/lifecycle/source-archive.ts",
       "kind": "source",
       "region": "kernel-core",
@@ -4246,6 +4252,27 @@
       "specifier": "../../store/yaml/index.ts",
       "from_layer": "core",
       "to_layer": "store"
+    },
+    {
+      "from": "kernel/core/lifecycle/source-archive-budget.ts",
+      "to": "kernel/core/lifecycle/source-shared.ts",
+      "specifier": "./source-shared.ts",
+      "from_layer": "core",
+      "to_layer": "core"
+    },
+    {
+      "from": "kernel/core/lifecycle/source-archive-budget.ts",
+      "to": "kernel/store/errors.ts",
+      "specifier": "../../store/errors.ts",
+      "from_layer": "core",
+      "to_layer": "store"
+    },
+    {
+      "from": "kernel/core/lifecycle/source-archive.ts",
+      "to": "kernel/core/lifecycle/source-archive-budget.ts",
+      "specifier": "./source-archive-budget.ts",
+      "from_layer": "core",
+      "to_layer": "core"
     },
     {
       "from": "kernel/core/lifecycle/source-archive.ts",
@@ -9667,15 +9694,15 @@
     }
   ],
   "stats": {
-    "source_files": 313,
+    "source_files": 314,
     "asset_nodes": 1,
-    "nodes": 314,
-    "edges": 1111,
+    "nodes": 315,
+    "edges": 1114,
     "unresolved": 0,
     "cycles": 0,
     "layers": {
       "contract": 12,
-      "core": 94,
+      "core": 95,
       "dispatch": 69,
       "entry": 2,
       "gui": 73,
@@ -9685,7 +9712,7 @@
     },
     "outgoing": {
       "contract": 19,
-      "core": 341,
+      "core": 344,
       "dispatch": 529,
       "entry": 10,
       "gui": 147,
@@ -9695,16 +9722,16 @@
     },
     "incoming": {
       "contract": 19,
-      "core": 401,
+      "core": 403,
       "dispatch": 218,
       "entry": 1,
       "gui": 147,
       "public": 1,
       "scripts": 37,
-      "store": 287
+      "store": 288
     },
     "cross_layer_edges": {
-      "core->store": 114,
+      "core->store": 115,
       "dispatch->core": 171,
       "dispatch->store": 149,
       "entry->core": 2,
