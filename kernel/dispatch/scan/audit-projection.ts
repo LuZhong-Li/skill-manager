@@ -10,6 +10,7 @@ import type {
   ReconciliationVisibility,
 } from '@skill-manager/contract';
 import { inventoryPhysicalKey } from '../../core/inventory/discover.ts';
+import { isPhysicallyWithin } from '../../store/paths/index.ts';
 import type { SkillTarget } from '../../core/metadata/types.ts';
 import type {
   AuditCopy,
@@ -41,9 +42,7 @@ function copyScope(copy: AuditCopy | InventoryAuditSource['missing'][number]): O
 }
 
 function pathMatches(targetPath: string, rootPath: string): boolean {
-  const target = inventoryPhysicalKey(targetPath);
-  const root = inventoryPhysicalKey(rootPath);
-  return target === root || target.startsWith(`${root}/`) || target.startsWith(`${root}\\`);
+  return isPhysicallyWithin(rootPath, targetPath);
 }
 
 function ledgerScope(

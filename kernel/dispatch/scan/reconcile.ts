@@ -21,6 +21,7 @@ import { adapterFor } from '../../core/adapters/index.ts';
 import { inventoryPhysicalKey } from '../../core/inventory/discover.ts';
 import { collectHashEntries } from '../../core/integrity/index.ts';
 import { loadHostLandings } from '../../store/host-landings/index.ts';
+import { isPhysicallyWithin } from '../../store/paths/index.ts';
 import { loadPluginIndex } from '../../store/plugin-registry/index.ts';
 import { TOOL_VERSION } from '../../core/index/index.ts';
 import { loadHostRegistry } from '../../core/hosts/index.ts';
@@ -323,13 +324,7 @@ function rootOfLedger(
 ): InventoryRootObservation | undefined {
   const target = item.record.target_path;
   return roots
-    .filter(
-      (root) =>
-        root.host_id === item.host_id &&
-        (target === root.path ||
-          target.startsWith(`${root.path}/`) ||
-          target.startsWith(`${root.path}\\`)),
-    )
+    .filter((root) => root.host_id === item.host_id && isPhysicallyWithin(root.path, target))
     .sort((left, right) => right.path.length - left.path.length)[0];
 }
 

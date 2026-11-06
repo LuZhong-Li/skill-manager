@@ -12,6 +12,7 @@ import type {
   ReconcileSelection,
 } from '@skill-manager/contract';
 import { computeLandingChecksum } from '../../core/integrity/index.ts';
+import { isPhysicallyWithin } from '../../store/paths/index.ts';
 import { readSkillFrontmatter } from '../../core/inventory/discover.ts';
 import type { SkillIndex } from '../../core/metadata/types.ts';
 import { resolveTargetById } from '../../core/targets/resolver/index.ts';
@@ -314,9 +315,7 @@ function rewriteAdoptWrites(
   const oldRoot = join(snapshot.layout.skillsDir, requestedId);
   const newRoot = join(snapshot.layout.skillsDir, targetId);
   return item.writes.map((write) =>
-    write.path === oldRoot ||
-    write.path.startsWith(`${oldRoot}\\`) ||
-    write.path.startsWith(`${oldRoot}/`)
+    isPhysicallyWithin(oldRoot, write.path)
       ? { ...write, path: write.path.replace(oldRoot, newRoot) }
       : write,
   );

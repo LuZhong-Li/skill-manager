@@ -3253,6 +3253,13 @@
       "to_layer": "store"
     },
     {
+      "from": "kernel/core/adapters/roots.ts",
+      "to": "kernel/store/paths/index.ts",
+      "specifier": "../../store/paths/index.ts",
+      "from_layer": "core",
+      "to_layer": "store"
+    },
+    {
       "from": "kernel/core/adapters/rules.ts",
       "to": "kernel/core/hosts/index.ts",
       "specifier": "../hosts/index.ts",
@@ -3944,6 +3951,13 @@
       "specifier": "../integrity/index.ts",
       "from_layer": "core",
       "to_layer": "core"
+    },
+    {
+      "from": "kernel/core/inventory/discover.ts",
+      "to": "kernel/store/paths/index.ts",
+      "specifier": "../../store/paths/index.ts",
+      "from_layer": "core",
+      "to_layer": "store"
     },
     {
       "from": "kernel/core/lifecycle/index.ts",
@@ -6256,6 +6270,13 @@
       "to_layer": "dispatch"
     },
     {
+      "from": "kernel/dispatch/reconcile/adopt-bulk.ts",
+      "to": "kernel/store/paths/index.ts",
+      "specifier": "../../store/paths/index.ts",
+      "from_layer": "dispatch",
+      "to_layer": "store"
+    },
+    {
       "from": "kernel/dispatch/reconcile/adopt-frontmatter.ts",
       "to": "kernel/store/findings.ts",
       "specifier": "../../store/findings.ts",
@@ -6504,6 +6525,13 @@
       "from": "kernel/dispatch/reconcile/candidates.ts",
       "to": "kernel/store/host-landings/index.ts",
       "specifier": "../../store/host-landings/index.ts",
+      "from_layer": "dispatch",
+      "to_layer": "store"
+    },
+    {
+      "from": "kernel/dispatch/reconcile/candidates.ts",
+      "to": "kernel/store/paths/index.ts",
+      "specifier": "../../store/paths/index.ts",
       "from_layer": "dispatch",
       "to_layer": "store"
     },
@@ -6978,6 +7006,13 @@
     },
     {
       "from": "kernel/dispatch/reconcile/plugin-candidates.ts",
+      "to": "kernel/store/paths/index.ts",
+      "specifier": "../../store/paths/index.ts",
+      "from_layer": "dispatch",
+      "to_layer": "store"
+    },
+    {
+      "from": "kernel/dispatch/reconcile/plugin-candidates.ts",
       "to": "kernel/store/plugin-registry/index.ts",
       "specifier": "../../store/plugin-registry/index.ts",
       "from_layer": "dispatch",
@@ -6996,6 +7031,13 @@
       "specifier": "./candidates.ts",
       "from_layer": "dispatch",
       "to_layer": "dispatch"
+    },
+    {
+      "from": "kernel/dispatch/reconcile/selection.ts",
+      "to": "kernel/store/paths/index.ts",
+      "specifier": "../../store/paths/index.ts",
+      "from_layer": "dispatch",
+      "to_layer": "store"
     },
     {
       "from": "kernel/dispatch/reconcile/track.ts",
@@ -8594,6 +8636,13 @@
       "to_layer": "dispatch"
     },
     {
+      "from": "kernel/dispatch/scan/audit-projection.ts",
+      "to": "kernel/store/paths/index.ts",
+      "specifier": "../../store/paths/index.ts",
+      "from_layer": "dispatch",
+      "to_layer": "store"
+    },
+    {
       "from": "kernel/dispatch/scan/audit-source.ts",
       "to": "kernel/core/hosts/index.ts",
       "specifier": "../../core/hosts/index.ts",
@@ -9031,6 +9080,13 @@
       "from": "kernel/dispatch/scan/reconcile.ts",
       "to": "kernel/store/host-landings/index.ts",
       "specifier": "../../store/host-landings/index.ts",
+      "from_layer": "dispatch",
+      "to_layer": "store"
+    },
+    {
+      "from": "kernel/dispatch/scan/reconcile.ts",
+      "to": "kernel/store/paths/index.ts",
+      "specifier": "../../store/paths/index.ts",
       "from_layer": "dispatch",
       "to_layer": "store"
     },
@@ -9732,7 +9788,7 @@
     "source_files": 314,
     "asset_nodes": 1,
     "nodes": 315,
-    "edges": 1119,
+    "edges": 1127,
     "unresolved": 0,
     "cycles": 0,
     "layers": {
@@ -9747,8 +9803,8 @@
     },
     "outgoing": {
       "contract": 19,
-      "core": 344,
-      "dispatch": 533,
+      "core": 346,
+      "dispatch": 539,
       "entry": 10,
       "gui": 147,
       "public": 6,
@@ -9763,12 +9819,12 @@
       "gui": 147,
       "public": 1,
       "scripts": 37,
-      "store": 292
+      "store": 300
     },
     "cross_layer_edges": {
-      "core->store": 115,
+      "core->store": 117,
       "dispatch->core": 171,
-      "dispatch->store": 152,
+      "dispatch->store": 158,
       "entry->core": 2,
       "entry->dispatch": 5,
       "entry->store": 2,

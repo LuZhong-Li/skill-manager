@@ -6,6 +6,7 @@ import { inventoryPhysicalKey } from '../../core/inventory/discover.ts';
 import { computeLandingChecksum } from '../../core/integrity/index.ts';
 import { collectUnifiedLandings } from '../../core/host-landings/uninstall.ts';
 import { loadPluginIndex } from '../../store/plugin-registry/index.ts';
+import { isPhysicallyWithin } from '../../store/paths/index.ts';
 import type { InventorySnapshot } from '../scan/inventory.ts';
 import type { Candidate } from './candidate-model.ts';
 
@@ -83,13 +84,8 @@ function pluginRootRole(
   hostId: string,
   targetPath: string,
 ): HostRootRole {
-  const key = inventoryPhysicalKey(targetPath);
   const root = snapshot.roots
-    .filter((item) => {
-      if (item.host_id !== hostId) return false;
-      const base = inventoryPhysicalKey(item.path);
-      return key === base || key.startsWith(`${base}/`) || key.startsWith(`${base}\\`);
-    })
+    .filter((item) => item.host_id === hostId && isPhysicallyWithin(item.path, targetPath))
     .sort((left, right) => right.path.length - left.path.length)[0];
   return root?.role ?? 'user';
 }

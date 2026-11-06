@@ -10,10 +10,11 @@
  * 三、解析结果必须可校验：已存在但不是目录、或父级不是目录时明确报错；
  * 四、根位于工作区之外时标记 external，供落位与确认使用。
  */
-import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { dirname, join } from 'node:path';
 import { CODES, type Finding } from '@skill-manager/contract';
 import { finding } from '../../store/findings.ts';
 import { isDirectory, pathExists } from '../../store/library-fs/index.ts';
+import { isPhysicallyWithin } from '../../store/paths/index.ts';
 import { hostById } from '../hosts/index.ts';
 import type { RootKind } from '../hosts/types.ts';
 import type { HostLandingRootDefinition } from '@skill-manager/contract';
@@ -63,12 +64,9 @@ export interface HostRootResolution {
   findings: Finding[];
 }
 
-/** 路径是否位于工作区之内（解析后比较，避免前缀误判） */
+/** 路径是否位于工作区之内：按物理等价比较，避免前缀误判与 Windows 大小写差异 */
 function isInside(workspaceRoot: string, target: string): boolean {
-  const base = resolve(workspaceRoot);
-  const candidate = resolve(target);
-  const rel = relative(base, candidate);
-  return rel === '' || (!rel.startsWith('..') && !isAbsolute(rel) && !rel.startsWith(`..${sep}`));
+  return isPhysicallyWithin(workspaceRoot, target);
 }
 
 /**

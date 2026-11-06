@@ -9,6 +9,7 @@ import type {
   ReconcileSelection,
 } from '@skill-manager/contract';
 import { inventoryPhysicalKey } from '../../core/inventory/discover.ts';
+import { isPhysicallyWithin } from '../../store/paths/index.ts';
 import { reconcileHostCopy } from '../../core/host-landings/reconcile.ts';
 import { readMetaFile } from '../../core/metadata/read.ts';
 import { loadHostLandings } from '../../store/host-landings/index.ts';
@@ -312,9 +313,7 @@ function guardedRootCandidates(
 }
 
 function distributionPathMatches(targetPath: string, rootPath: string): boolean {
-  const target = inventoryPhysicalKey(targetPath);
-  const root = inventoryPhysicalKey(rootPath);
-  return target === root || target.startsWith(`${root}/`) || target.startsWith(`${root}\\`);
+  return isPhysicallyWithin(rootPath, targetPath);
 }
 
 function distributionReconciliation(

@@ -6,6 +6,7 @@ import type {
   ReconcileSelectionSummary,
 } from '@skill-manager/contract';
 import { inventoryPhysicalKey } from '../../core/inventory/discover.ts';
+import { isPhysicallyWithin } from '../../store/paths/index.ts';
 import type { Candidate } from './candidates.ts';
 
 type ClassificationOf = (candidate: Candidate) => InventoryClassificationKey;
@@ -15,9 +16,7 @@ function hostMatches(candidate: Candidate, host: string | undefined): boolean {
 }
 
 function rootPathMatches(targetPath: string, root: Pick<InventoryRootView, 'path'>): boolean {
-  const target = inventoryPhysicalKey(targetPath);
-  const base = inventoryPhysicalKey(root.path);
-  return target === base || target.startsWith(`${base}/`) || target.startsWith(`${base}\\`);
+  return isPhysicallyWithin(root.path, targetPath);
 }
 
 export function rootMatches(

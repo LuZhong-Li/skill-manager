@@ -1,7 +1,8 @@
 /** M4c-2 只读宿主目录发现：根状态、有效副本、损坏副本与物理去重。 */
-import { lstatSync, readdirSync, readFileSync, realpathSync, statSync } from 'node:fs';
-import { basename, join, resolve } from 'node:path';
+import { lstatSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { basename, join } from 'node:path';
 import { parse as parseYamlText } from 'yaml';
+import { physicalKey } from '../../store/paths/index.ts';
 import {
   DISABLED_SUFFIX,
   SKILL_MD_NAME,
@@ -40,15 +41,12 @@ function unique(values: readonly string[]): string[] {
   return [...new Set(values)].filter((value) => value !== '');
 }
 
-/** 物理去重键：realpath + Windows casefold；M4c-3 反向 matched 也复用。 */
+/**
+ * 物理去重键：realpath + Windows casefold；M4c-3 反向 matched 也复用。
+ * 委托共享路径助手，保证审计、reconcile 与落位用同一套规范化语义。
+ */
 export function inventoryPhysicalKey(path: string): string {
-  let resolved = resolve(path);
-  try {
-    resolved = realpathSync.native(path);
-  } catch {
-    // 根不存在时仍以解析后的路径去重，避免把同一路径当成两个对象。
-  }
-  return process.platform === 'win32' ? resolved.toLowerCase() : resolved;
+  return physicalKey(path);
 }
 
 function sourceOf(root: InventoryRootView): InventoryCopySource {

@@ -35,12 +35,12 @@ v0.9.0 已将问题处理、经验回归与只读代码探查发布到主干，�
 
 **目标**：先把当前缺口以可重复的失败测试固定，不先写实现。
 
-**执行状态**：**除 Windows 路径夹具外已完成（2026-11-06）**。双进程 CLI 竞态、落位故障注入（第三方文件不随回滚删除）、归档预算、陈旧锁回收、活锁超时诊断与只读零工作区写均已覆盖；仅剩盘符/大小写/8.3 短名夹具。
+**执行状态**：**已完成（2026-11-06）**。双进程 CLI 竞态、落位故障注入（第三方文件不随回滚删除）、归档预算、陈旧锁回收、活锁超时诊断、只读零工作区写与 Windows 路径夹具均已覆盖。
 
 - [x] 新增双进程竞争测试：两个子进程同时对一个工作区 install / update / reconcile，复现索引覆盖或写入竞态。
 - [x] 新增落位故障注入：检查后由第二参与方创建目标，第一参与方失败后不得删掉第二参与方文件。
 - [x] 新增 ZIP / TAR 夹具：超条目数、超单条、超累计、超压缩比，以及安全边界内归档。
-- [ ] 新增 Windows 路径夹具：盘符与路径大小写变化；短名测试只在系统支持 8.3 名称时运行，否则显式 skip。
+- [x] 新增 Windows 路径夹具：盘符与路径大小写变化；短名测试只在系统支持 8.3 名称时运行，否则显式 skip。
 - [x] 记录每条测试当前为何失败，避免把已有正确行为误标为漏洞。
 
 **验收**：测试可稳定区分当前失败的安全行为与已有正确保护，夹具不依赖真实用户目录。
@@ -93,11 +93,13 @@ v0.9.0 已将问题处理、经验回归与只读代码探查发布到主干，�
 
 **目标**：移除审计 / reconcile 中直接字符串前缀比较。
 
-- [ ] 提取共享路径助手，统一 `resolve`、separator 和 Windows case folding。
-- [ ] 对存在路径使用 `realpath.native()`；对不存在路径从最近存在祖先规范化后拼接剩余段，避免把计划目标错误视为外部路径。
-- [ ] 将 audit projection、reconcile candidates 等 `startsWith(root)` 迁移到共享 containment API。
-- [ ] 保持 `store/paths` 和 `adapters/roots` 已有 `relative()` 防护的一致语义。
-- [ ] 添加 Windows 特定大小写 / 盘符 / separator 测试；8.3 短名仅在可复现实机上作为条件测试。
+**执行状态**：**已完成（2026-11-06）**。共享助手在 `kernel/store/paths/index.ts`：`physicalKey()`（realpath + 最近存在祖先回填 + Windows 大小写折叠）与 `isPhysicallyWithin()`；`inventoryPhysicalKey` 改为委托同一实现，审计投影、reconcile 候选/选择/插件反查、批量 adopt 与 `adapters/roots` 的归属判定全部迁移到该 API。回归见 `tests/unit/paths-physical.test.ts`（10 项，含盘符、大小写、分隔符与 8.3 短名条件测试）。
+
+- [x] 提取共享路径助手，统一 `resolve`、separator 和 Windows case folding。
+- [x] 对存在路径使用 `realpath.native()`；对不存在路径从最近存在祖先规范化后拼接剩余段，避免把计划目标错误视为外部路径。
+- [x] 将 audit projection、reconcile candidates 等 `startsWith(root)` 迁移到共享 containment API。
+- [x] 保持 `store/paths` 和 `adapters/roots` 已有 `relative()` 防护的一致语义。
+- [x] 添加 Windows 特定大小写 / 盘符 / separator 测试；8.3 短名仅在可复现实机上作为条件测试。
 
 **验收**：等价路径不会产生不同 external / shared-root 结论；`/workspace-evil`、盘符不同路径、UNC 越界仍被拒绝。
 
