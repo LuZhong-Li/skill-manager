@@ -9,7 +9,7 @@
 import { dispatch } from '../dispatch/registry/index.ts';
 import { parseArgs, flag, option, optionList } from '../dispatch/parsers/index.ts';
 import { render } from '../dispatch/render/index.ts';
-import { buildResult, exitCodeFor } from '../dispatch/result/index.ts';
+import { buildResult } from '../dispatch/result/index.ts';
 import { CODES } from '@skill-manager/contract';
 import { finding } from '../store/findings.ts';
 import { TOOL_VERSION } from '../core/index/index.ts';
@@ -65,8 +65,10 @@ export async function run(
     return 0;
   }
   if (flag(args, 'help') || args.command === '') {
+    // 帮助是信息性输出：没有请求执行任何指令，因此解析器产生的「未给出指令名」
+    // 之类问题不构成失败，退出码恒为 0（与 --version 一致）。
     process.stdout.write(helpText());
-    return findings.length > 0 ? exitCodeFor(findings) : 0;
+    return 0;
   }
 
   if (findings.length > 0) {
