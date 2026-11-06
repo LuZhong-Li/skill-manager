@@ -1,6 +1,6 @@
 {
   "name": "@skill-manager/gui",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "private": true,
   "description": "Electron 桌面外壳：只承担视图职责，操作经由内核指令完成",
   "author": "skill-manager",
