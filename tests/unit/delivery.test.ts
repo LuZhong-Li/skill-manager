@@ -234,6 +234,10 @@ test('N-11：重分发失败时刷新整体失败，不写索引', async () => {
   assert.equal(outcome.index, installed.index, '失败时索引原样返回，调用方不得写入');
   assert.equal(outcome.data['rejected'], 'redistribute_failed');
   assert.ok(outcome.findings.some((item) => item.severity === 'error'));
+  const drift = outcome.findings.find((item) => item.code === CODES.DRIFT);
+  assert.ok(drift !== undefined, '失败后必须说明索引基线仍是旧状态');
+  assert.match(drift.message, /刷新未生效|索引基线仍为/);
+  assert.match(drift.remedy, /重新执行 update/);
 });
 
 test('N-11：--target 只刷新指定目标的副本', async () => {

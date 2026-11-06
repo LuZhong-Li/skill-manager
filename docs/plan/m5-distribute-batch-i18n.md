@@ -243,6 +243,8 @@ T0 只改类型 / schema / 文档，无运行期行为；回滚为撤销对应 d
 
 ## 7. T5：W-DRIFT-001 修正
 
+> **执行状态：已完成（2026-11-06）**。落地：`kernel/core/lifecycle/update.ts` 的 `checkDriftOf` 按来源类型与预览模式分派语义，重分发失败路径补「刷新未生效、索引基线仍为旧值」说明；GUI `errors-*.ts` 的 `W-DRIFT-001` 说明改为「磁盘内容与记录基线」，与内核判定条件对齐；`result-and-exit-codes` 新增按动作的触发时机表；测试为 `tests/e2e/update-drift-semantics.test.ts`（5 项）与 `tests/unit/delivery.test.ts` 的重分发失败断言，`update-drift-warning.test.ts` 既有 2 项继续通过。问题码、JSON 字段、退出码与索引语义均未改变。
+
 ### 7.1 目标
 
 成功 `update` 后不再显示旧快照导致的误导性 `W-DRIFT-001`；真实漂移保留。

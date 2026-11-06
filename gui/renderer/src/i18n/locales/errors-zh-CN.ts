@@ -14,7 +14,7 @@ export default {
     'E-RECONCILE-001': '当前 reconcile 动作不受支持。',
     'E-RECONCILE-002': '预览已过期，请重新预览。',
     'E-RECONCILE-003': '共享宿主根选择不完整。',
-    'W-DRIFT-001': '当前内容与记录基线不一致。',
+    'W-DRIFT-001': '磁盘内容与记录的内容基线不一致，判定为内容漂移。',
     'W-FIELD-004': '来源中存在不属于标准契约的字段。',
   },
 } as const;

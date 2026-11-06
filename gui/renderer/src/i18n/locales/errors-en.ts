@@ -14,7 +14,7 @@ export default {
     'E-RECONCILE-001': 'The reconcile action is unsupported.',
     'E-RECONCILE-002': 'The preview is stale; run preview again.',
     'E-RECONCILE-003': 'The shared host root selection is incomplete.',
-    'W-DRIFT-001': 'The current content differs from the recorded baseline.',
+    'W-DRIFT-001': 'The content on disk differs from the recorded content baseline.',
     'W-FIELD-004': 'The source contains a field that is not part of the standard contract.',
   },
 } as const;

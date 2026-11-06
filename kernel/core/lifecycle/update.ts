@@ -250,7 +250,20 @@ function updateFromSource(input: UpdateInput, fetchedDir: string | null): Lifecy
       const kernelError = toKernelError(error, CODES.IO_FAILED);
       return {
         index,
-        findings: [...findings, toFinding(kernelError)],
+        findings: [
+          ...findings,
+          toFinding(kernelError),
+          // 失败后索引基线仍是刷新前的旧状态：说明真实差异在哪，避免用户以为「已更新」
+          finding(CODES.DRIFT, {
+            source: 'meta',
+            target: id,
+            message:
+              `刷新未生效：副本重分发失败，索引基线仍为 ${record.checksum}，` +
+              `中心库磁盘内容已按来源变为 ${checksum}`,
+            remedy:
+              '请解除副本占用后重新执行 update；在下一次成功刷新前，该 Skill 会持续报告真实漂移',
+          }),
+        ],
         changes: [],
         data: { rejected: 'redistribute_failed', rolled_back: true },
       };
@@ -281,6 +294,17 @@ function updateFromSource(input: UpdateInput, fetchedDir: string | null): Lifecy
   };
 }
 
+/**
+ * `update --check` 的漂移提示。
+ *
+ * 触发条件固定为「当前内容基线」与磁盘实际内容不一致（`result-and-exit-codes` 规范）：
+ * - 成功刷新（`fetchedDir !== null`）时索引尚未基于新内容重算，此时的旧基线差异不是用户
+ *   造成的漂移，必须抑制；真实漂移由刷新后的 `validate` 按文件级摘要报告。
+ * - 本地来源 `--check` 只读，报告的差异确实来自中心库磁盘内容，按真实漂移报告并给出
+ *   可执行的两条出路：以磁盘现状刷新基线，或从来源重新获取覆盖本地改动。
+ * - 远端来源 `--check` 不落盘、不重新获取，「远端有新提交」与「本地被改动」是两件事，
+ *   不能用漂移码冒充；这里只说明预览结果的语义。
+ */
 function checkDriftOf(input: {
   record: SkillIndex['skills'][number];
   checksum: string;
@@ -288,19 +312,18 @@ function checkDriftOf(input: {
   fetchedDir: string | null;
   id: string;
 }): Finding[] {
-  if (
-    input.check !== true ||
-    input.fetchedDir !== null ||
-    input.record.checksum === input.checksum
-  ) {
-    return [];
-  }
+  // 非预览模式没有只读语义，这里的差异留给后续摘要与 validate 报告
+  if (input.check !== true) return [];
+  // 成功刷新后索引尚未基于新内容重算，旧基线差异不是用户改动，必须抑制
+  if (input.fetchedDir !== null) return [];
+  if (input.record.checksum === input.checksum) return [];
   return [
     finding(CODES.DRIFT, {
       source: 'meta',
       target: input.id,
-      message: `本地内容与记录不一致：记录指纹 ${input.record.checksum}，重算指纹 ${input.checksum}`,
-      remedy: '本次检查按磁盘现状报告漂移；如需保留原内容，请先还原磁盘文件',
+      message: `中心库内容已被改动：记录基线指纹 ${input.record.checksum}，磁盘重算指纹 ${input.checksum}`,
+      remedy:
+        '如为有意修改，请执行 scan 以刷新内容基线；如需以声明来源为准，请去掉 --check 后执行 update 覆盖本地改动',
     }),
   ];
 }
