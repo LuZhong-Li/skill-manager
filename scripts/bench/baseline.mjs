@@ -115,22 +115,12 @@ export function inflectionOf({ n1000, n5000First, n5000Second, scenario }) {
   };
 }
 
-function main() {
-  const options = parseArgs(process.argv.slice(2));
-  const rounds = {
-    round1: readReports(join(options.rawDir, 'round1')),
-    round2: readReports(options.rawDir, /^round2-.*\.json$/),
-    current: readReports(options.rawDir),
-  };
-  if (rounds.round1.length === 0) {
-    throw new Error(`未找到第一轮报告：${join(options.rawDir, 'round1')}（拐点比较需要两轮数据）`);
-  }
+/** 同一线在同一轮会有多份报告（按档位分文件）：合并成一张「档位 → 场景」表 */
+const reportsOfForm = (items, form, name = 'report-') =>
+  items.filter((item) => item.name.startsWith(`${name}${form}-`)).map((item) => item.report);
+const mergedTiers = (reports) => Object.assign({}, ...reports.map((report) => tierTable(report)));
 
-  /** 同一线在同一轮会有多份报告（按档位分文件）：合并成一张「档位 → 场景」表 */
-  const reportsOfForm = (items, form, name = 'report-') =>
-    items.filter((item) => item.name.startsWith(`${name}${form}-`)).map((item) => item.report);
-  const mergedTiers = (reports) => Object.assign({}, ...reports.map((report) => tierTable(report)));
-
+function buildMeasurement(rounds) {
   const measurement = {};
   for (const form of ['source', 'sea']) {
     const first = reportsOfForm(rounds.round1, form);
@@ -146,7 +136,10 @@ function main() {
       raw_reports_round2: second,
     };
   }
+  return measurement;
+}
 
+function buildInflection(measurement) {
   const inflection = {};
   for (const form of Object.keys(measurement)) {
     const tiers = measurement[form].tiers;
@@ -161,7 +154,20 @@ function main() {
       }),
     );
   }
+  return inflection;
+}
 
+function main() {
+  const options = parseArgs(process.argv.slice(2));
+  const rounds = {
+    round1: readReports(join(options.rawDir, 'round1')),
+    round2: readReports(options.rawDir, /^round2-.*\.json$/),
+  };
+  if (rounds.round1.length === 0) {
+    throw new Error(`未找到第一轮报告：${join(options.rawDir, 'round1')}（拐点比较需要两轮数据）`);
+  }
+  const measurement = buildMeasurement(rounds);
+  const inflection = buildInflection(measurement);
   const ciSmoke = JSON.parse(readFileSync(options.ciSmoke, 'utf8'));
 
   const baseline = {
@@ -170,10 +176,9 @@ function main() {
     recorded_at: new Date().toISOString(),
     /** 口径声明：本基线怎么来的、什么能比、什么不能比 */
     scope: {
-      local:
-        '本机 Windows / Node v24.14.1 / runs=3（N=5000 为拐点判定显式用 runs=3，BX-03 默认 1）',
+      local: `${measurement.source.environment.platform}/${measurement.source.environment.arch} / ${measurement.source.environment.node} / runs=3（N=5000 也独立复测 3 次，用于拐点判定）`,
       cross_line: '跨线只比总墙钟与峰值内存；SEA 为打包产物、库内部帧名被改写，阶段归集系统性偏低',
-      cross_environment: '跨环境只比量级与拐点，不做绝对阈值比较（CI 波动 17%~30%）',
+      cross_environment: '跨环境只比量级与采样链路健康，不做绝对阈值比较（CI 为共享 runner）',
       thresholds:
         'N=1000 硬阈值：scan ≤ 30 s、validate ≤ 30 s、export ≤ 15 s、峰值 RSS ≤ 512 MB（需求 9.4.3，未测先收紧）',
     },
@@ -186,32 +191,35 @@ function main() {
         form: 'local-matrix',
         reason:
           '无本机 macOS 环境：三档 × 双线 × runs=3 的全矩阵无法在本机执行（环境限制，非缺陷）',
-        evidence: 'CI N=100 双线数据见 ci_smoke（修复后 run 38942732908，macOS 双线均有数据）',
-        follow_up: '如需三档 macOS 曲线，需专用 macOS 环境或长跑 runner（登记为后续可选项）',
+        evidence: `CI 记录见 ci_smoke（run ${String(ciSmoke.run_id ?? 'unknown')}；macOS 以 runs=1 补齐双线三档）`,
+        follow_up: '如需可作同机时序比较的 macOS 基线，需专用 macOS 机器或长跑 runner（可选项）',
       },
     ],
-    closed_defects: [
-      {
-        id: 'EX-13',
-        title: 'macOS 上 SEA 内核启动即被系统终止（SIGSEGV 139）',
-        root_cause: 'SEA 注入缺 macOS 必需参数 --macho-segment-name NODE_SEA（Node 官方文档口径）',
-        fix: 'scripts/sea-postject.mjs（postject 参数唯一实现，仅 darwin 加段名）+ build-kernel.mjs 改用它',
-        verification: {
-          'darwin-arm64': { A: 0, B: 0, C: 139 },
-          'darwin-x64': { A: 0, B: 0, C: 139 },
-        },
-        notes: [
-          'A = 构建期产物、B = electron-builder 打包后 .app 内内核、C = v0.1.0 发布 dmg 内内核；数值为 --version 的退出码',
-          'C 组 139 说明 v0.1.0 的 macOS 包（arm64 与 x64）内嵌内核不可执行 —— 是否发 v0.1.1 补丁由维护者裁决',
-          '排除项：签名校验有效、可执行位正常、裸 node 副本可运行、Linux/Windows 同流程正常',
-        ],
-      },
-    ],
+    closed_defects:
+      options.version === '0.1.0'
+        ? [
+            {
+              id: 'EX-13',
+              title: 'macOS 上 SEA 内核启动即被系统终止（SIGSEGV 139）',
+              root_cause:
+                'SEA 注入缺 macOS 必需参数 --macho-segment-name NODE_SEA（Node 官方文档口径）',
+              fix: 'scripts/sea-postject.mjs（postject 参数唯一实现，仅 darwin 加段名）+ build-kernel.mjs 改用它',
+              verification: {
+                'darwin-arm64': { A: 0, B: 0, C: 139 },
+                'darwin-x64': { A: 0, B: 0, C: 139 },
+              },
+              notes: [
+                'A = 构建期产物、B = electron-builder 打包后 .app 内内核、C = v0.1.0 发布 dmg 内内核；数值为 --version 的退出码',
+                'C 组 139 说明 v0.1.0 的 macOS 包（arm64 与 x64）内嵌内核不可执行 —— 是否发 v0.1.1 补丁由维护者裁决',
+                '排除项：签名校验有效、可执行位正常、裸 node 副本可运行、Linux/Windows 同流程正常',
+              ],
+            },
+          ]
+        : [],
     notes: [
       '本基线的原始逐次样本随文档入库（build/ 不入库），因此可离线复核中位数与极差',
       'CI 烟测数值仅记录、不作门禁；其作用是验证三平台采样链路与真机路径',
-      'N=1000 阈值判定见报告；拐点判定用两轮独立数据（同环境）',
-      '内核侧三处观察项（环检测收敛不可见、元文件 YAML 错误档位、目录名/id 不一致重复记录）与 EX-13 列入待办',
+      'N=1000 阈值判定见报告；拐点判定用两轮独立 N=5000 数据（同环境、每轮 runs=3）',
     ],
   };
 

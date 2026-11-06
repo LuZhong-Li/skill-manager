@@ -1641,6 +1641,12 @@
       "layer": "scripts"
     },
     {
+      "path": "scripts/bench/ci-record.mjs",
+      "kind": "source",
+      "region": "scripts",
+      "layer": "scripts"
+    },
+    {
       "path": "scripts/bench/fixture-cli.mjs",
       "kind": "source",
       "region": "scripts",
@@ -9918,9 +9924,9 @@
     }
   ],
   "stats": {
-    "source_files": 321,
+    "source_files": 322,
     "asset_nodes": 1,
-    "nodes": 322,
+    "nodes": 323,
     "edges": 1140,
     "unresolved": 0,
     "cycles": 0,
@@ -9931,7 +9937,7 @@
       "entry": 2,
       "gui": 79,
       "public": 1,
-      "scripts": 52,
+      "scripts": 53,
       "store": 12
     },
     "outgoing": {

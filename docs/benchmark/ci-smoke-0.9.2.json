@@ -1,0 +1,472 @@
+{
+  "schema": "bench-ci-smoke/1",
+  "version": "0.9.2",
+  "collection": "GitHub Actions artifact 下载后由 scripts/bench/ci-record.mjs 汇总；完整原始报告保留在 Actions artifact（14 天）",
+  "note": "CI 为共享 runner，数值仅记录、不可作绝对性能门禁；用途是验证三平台采样链路和真机路径。",
+  "run_id": 42198856481,
+  "run_url": "https://github.com/LuZhong-Li/skill-manager/actions/runs/42198856481",
+  "platforms": [
+    {
+      "platform": "linux",
+      "runner": "7.0.0-1017-azure",
+      "arch": "x64",
+      "kernel": "0.9.2",
+      "samples": {
+        "source": {
+          "n100": {
+            "startup": {
+              "wall_median_ms": 293,
+              "peak_rss_max_mb": 116.6,
+              "coverage": 0.07,
+              "exit_codes": [
+                0
+              ]
+            },
+            "scan-cold": {
+              "wall_median_ms": 425,
+              "peak_rss_max_mb": 132.2,
+              "coverage": 0.3,
+              "exit_codes": [
+                6
+              ]
+            },
+            "scan-hot": {
+              "wall_median_ms": 481,
+              "peak_rss_max_mb": 155.8,
+              "coverage": 0.39,
+              "exit_codes": [
+                6
+              ]
+            },
+            "validate": {
+              "wall_median_ms": 425,
+              "peak_rss_max_mb": 141.2,
+              "coverage": 0.34,
+              "exit_codes": [
+                1
+              ]
+            },
+            "export": {
+              "wall_median_ms": 384,
+              "peak_rss_max_mb": 128.6,
+              "coverage": 0.28,
+              "exit_codes": [
+                0
+              ]
+            }
+          }
+        },
+        "sea": {
+          "n100": {
+            "startup": {
+              "wall_median_ms": 69,
+              "peak_rss_max_mb": 73.6,
+              "coverage": 0,
+              "exit_codes": [
+                0
+              ]
+            },
+            "scan-cold": {
+              "wall_median_ms": 197,
+              "peak_rss_max_mb": 102.3,
+              "coverage": 0.18,
+              "exit_codes": [
+                6
+              ]
+            },
+            "scan-hot": {
+              "wall_median_ms": 382,
+              "peak_rss_max_mb": 114.2,
+              "coverage": 0.09,
+              "exit_codes": [
+                6
+              ]
+            },
+            "validate": {
+              "wall_median_ms": 216,
+              "peak_rss_max_mb": 110.1,
+              "coverage": 0.07,
+              "exit_codes": [
+                1
+              ]
+            },
+            "export": {
+              "wall_median_ms": 213,
+              "peak_rss_max_mb": 108.8,
+              "coverage": 0.1,
+              "exit_codes": [
+                0
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "platform": "windows",
+      "runner": "10.0.26100",
+      "arch": "x64",
+      "kernel": "0.9.2",
+      "samples": {
+        "source": {
+          "n100": {
+            "startup": {
+              "wall_median_ms": 678,
+              "peak_rss_max_mb": 73.3,
+              "coverage": 0.12,
+              "exit_codes": [
+                0
+              ]
+            },
+            "scan-cold": {
+              "wall_median_ms": 1140,
+              "peak_rss_max_mb": 92,
+              "coverage": 0.31,
+              "exit_codes": [
+                6
+              ]
+            },
+            "scan-hot": {
+              "wall_median_ms": 1135,
+              "peak_rss_max_mb": 113.4,
+              "coverage": 0.43,
+              "exit_codes": [
+                6
+              ]
+            },
+            "validate": {
+              "wall_median_ms": 1023,
+              "peak_rss_max_mb": 107.5,
+              "coverage": 0.36,
+              "exit_codes": [
+                1
+              ]
+            },
+            "export": {
+              "wall_median_ms": 878,
+              "peak_rss_max_mb": 90.8,
+              "coverage": 0.28,
+              "exit_codes": [
+                0
+              ]
+            }
+          }
+        },
+        "sea": {
+          "n100": {
+            "startup": {
+              "wall_median_ms": 161,
+              "peak_rss_max_mb": 40.2,
+              "coverage": 0.04,
+              "exit_codes": [
+                0
+              ]
+            },
+            "scan-cold": {
+              "wall_median_ms": 540,
+              "peak_rss_max_mb": 64.4,
+              "coverage": 0.31,
+              "exit_codes": [
+                6
+              ]
+            },
+            "scan-hot": {
+              "wall_median_ms": 647,
+              "peak_rss_max_mb": 77.3,
+              "coverage": 0.24,
+              "exit_codes": [
+                6
+              ]
+            },
+            "validate": {
+              "wall_median_ms": 544,
+              "peak_rss_max_mb": 72.7,
+              "coverage": 0.21,
+              "exit_codes": [
+                1
+              ]
+            },
+            "export": {
+              "wall_median_ms": 400,
+              "peak_rss_max_mb": 71.4,
+              "coverage": 0.12,
+              "exit_codes": [
+                0
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "platform": "macos",
+      "runner": "24.6.0",
+      "arch": "arm64",
+      "kernel": "0.9.2",
+      "samples": {
+        "source": {
+          "n1000": {
+            "startup": {
+              "wall_median_ms": 562,
+              "peak_rss_max_mb": 106.1,
+              "coverage": 0.04,
+              "exit_codes": [
+                0
+              ]
+            },
+            "scan-cold": {
+              "wall_median_ms": 1501,
+              "peak_rss_max_mb": 176,
+              "coverage": 0.53,
+              "exit_codes": [
+                6
+              ]
+            },
+            "scan-hot": {
+              "wall_median_ms": 2291,
+              "peak_rss_max_mb": 196.1,
+              "coverage": 0.63,
+              "exit_codes": [
+                6
+              ]
+            },
+            "validate": {
+              "wall_median_ms": 2341,
+              "peak_rss_max_mb": 187.5,
+              "coverage": 0.64,
+              "exit_codes": [
+                1
+              ]
+            },
+            "export": {
+              "wall_median_ms": 1459,
+              "peak_rss_max_mb": 182.4,
+              "coverage": 0.33,
+              "exit_codes": [
+                0
+              ]
+            }
+          },
+          "n5000": {
+            "startup": {
+              "wall_median_ms": 562,
+              "peak_rss_max_mb": 106.1,
+              "coverage": 0.04,
+              "exit_codes": [
+                0
+              ]
+            },
+            "scan-cold": {
+              "wall_median_ms": 7094,
+              "peak_rss_max_mb": 282.7,
+              "coverage": 0.72,
+              "exit_codes": [
+                6
+              ]
+            },
+            "scan-hot": {
+              "wall_median_ms": 7561,
+              "peak_rss_max_mb": 442,
+              "coverage": 0.63,
+              "exit_codes": [
+                6
+              ]
+            },
+            "validate": {
+              "wall_median_ms": 5467,
+              "peak_rss_max_mb": 390.5,
+              "coverage": 0.68,
+              "exit_codes": [
+                1
+              ]
+            },
+            "export": {
+              "wall_median_ms": 2221,
+              "peak_rss_max_mb": 397.1,
+              "coverage": 0.59,
+              "exit_codes": [
+                0
+              ]
+            }
+          },
+          "n100": {
+            "startup": {
+              "wall_median_ms": 381,
+              "peak_rss_max_mb": 105.5,
+              "coverage": 0.05,
+              "exit_codes": [
+                0
+              ]
+            },
+            "scan-cold": {
+              "wall_median_ms": 932,
+              "peak_rss_max_mb": 123.5,
+              "coverage": 0.39,
+              "exit_codes": [
+                6
+              ]
+            },
+            "scan-hot": {
+              "wall_median_ms": 998,
+              "peak_rss_max_mb": 146.3,
+              "coverage": 0.36,
+              "exit_codes": [
+                6
+              ]
+            },
+            "validate": {
+              "wall_median_ms": 823,
+              "peak_rss_max_mb": 136.8,
+              "coverage": 0.33,
+              "exit_codes": [
+                1
+              ]
+            },
+            "export": {
+              "wall_median_ms": 775,
+              "peak_rss_max_mb": 124.1,
+              "coverage": 0.31,
+              "exit_codes": [
+                0
+              ]
+            }
+          }
+        },
+        "sea": {
+          "n1000": {
+            "startup": {
+              "wall_median_ms": 124,
+              "peak_rss_max_mb": 53.3,
+              "coverage": 0,
+              "exit_codes": [
+                0
+              ]
+            },
+            "scan-cold": {
+              "wall_median_ms": 951,
+              "peak_rss_max_mb": 165.9,
+              "coverage": 0.35,
+              "exit_codes": [
+                6
+              ]
+            },
+            "scan-hot": {
+              "wall_median_ms": 1267,
+              "peak_rss_max_mb": 213.3,
+              "coverage": 0.27,
+              "exit_codes": [
+                6
+              ]
+            },
+            "validate": {
+              "wall_median_ms": 891,
+              "peak_rss_max_mb": 183.5,
+              "coverage": 0.23,
+              "exit_codes": [
+                1
+              ]
+            },
+            "export": {
+              "wall_median_ms": 564,
+              "peak_rss_max_mb": 157.6,
+              "coverage": 0.12,
+              "exit_codes": [
+                0
+              ]
+            }
+          },
+          "n5000": {
+            "startup": {
+              "wall_median_ms": 124,
+              "peak_rss_max_mb": 53.3,
+              "coverage": 0,
+              "exit_codes": [
+                0
+              ]
+            },
+            "scan-cold": {
+              "wall_median_ms": 10694,
+              "peak_rss_max_mb": 271.4,
+              "coverage": 0.61,
+              "exit_codes": [
+                6
+              ]
+            },
+            "scan-hot": {
+              "wall_median_ms": 8937,
+              "peak_rss_max_mb": 607.3,
+              "coverage": 0.31,
+              "exit_codes": [
+                6
+              ]
+            },
+            "validate": {
+              "wall_median_ms": 5124,
+              "peak_rss_max_mb": 487.4,
+              "coverage": 0.29,
+              "exit_codes": [
+                1
+              ]
+            },
+            "export": {
+              "wall_median_ms": 2566,
+              "peak_rss_max_mb": 372.7,
+              "coverage": 0.14,
+              "exit_codes": [
+                0
+              ]
+            }
+          },
+          "n100": {
+            "startup": {
+              "wall_median_ms": 131,
+              "peak_rss_max_mb": 44.1,
+              "coverage": 0,
+              "exit_codes": [
+                0
+              ]
+            },
+            "scan-cold": {
+              "wall_median_ms": 370,
+              "peak_rss_max_mb": 79.8,
+              "coverage": 0.28,
+              "exit_codes": [
+                6
+              ]
+            },
+            "scan-hot": {
+              "wall_median_ms": 362,
+              "peak_rss_max_mb": 94.2,
+              "coverage": 0.16,
+              "exit_codes": [
+                6
+              ]
+            },
+            "validate": {
+              "wall_median_ms": 431,
+              "peak_rss_max_mb": 89.4,
+              "coverage": 0.19,
+              "exit_codes": [
+                1
+              ]
+            },
+            "export": {
+              "wall_median_ms": 313,
+              "peak_rss_max_mb": 76.7,
+              "coverage": 0.11,
+              "exit_codes": [
+                0
+              ]
+            }
+          }
+        }
+      }
+    }
+  ],
+  "artifact_layout": {
+    "linux": "bench-linux-run42198856481",
+    "windows": "bench-windows-run42198856481",
+    "macos": "bench-macos-run42198856481（含 extra/ 的 N=1000、N=5000 补充矩阵）"
+  },
+  "gaps": []
+}

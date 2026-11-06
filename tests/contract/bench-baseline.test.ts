@@ -178,3 +178,48 @@ test('契约：报告说明 EX-13 与三处内核观察项（不留悬空）', (
     '缺测范围必须点名（macOS 本机全矩阵）',
   );
 });
+
+test('契约：0.9.2 再基线的报告摘要与原始基线同源', () => {
+  const nextBaselinePath = join(root, 'docs', 'benchmark', 'baseline-0.9.2.json');
+  const nextReportPath = join(root, 'docs', 'benchmark', 'report-0.9.2.md');
+  const nextBaseline = JSON.parse(readFileSync(nextBaselinePath, 'utf8')) as Baseline;
+  const nextDoc = readFileSync(nextReportPath, 'utf8');
+  const marker = nextDoc.indexOf('<!-- baseline-summary');
+  assert.notEqual(marker, -1, '0.9.2 报告应含 baseline-summary 同源块');
+  const block = /```json\n([\s\S]*?)\n```/.exec(nextDoc.slice(marker));
+  assert.ok(block !== null, '0.9.2 baseline-summary 应含 json 代码块');
+  const summary = JSON.parse(block[1]) as ReturnType<typeof reportSummary> & { ci_run: number };
+
+  assert.equal(nextBaseline.schema, BASELINE_SCHEMA);
+  assert.equal(nextBaseline.version, '0.9.2');
+  assert.equal(nextBaseline.ci_smoke.run_id, summary.ci_run);
+  assert.deepEqual(
+    nextBaseline.gaps.map((gap) => `${gap.platform}:${gap.form}`),
+    ['darwin-arm64:local-matrix'],
+  );
+  for (const form of ['source', 'sea'] as const) {
+    const tiers = nextBaseline.measurement[form].tiers['1000'];
+    assert.equal(
+      summary.thresholds_n1000[form].scan_ms,
+      Math.round(tiers['scan-cold'].wall_ms.median),
+    );
+    assert.equal(
+      summary.thresholds_n1000[form].validate_ms,
+      Math.round(tiers.validate.wall_ms.median),
+    );
+    assert.equal(summary.thresholds_n1000[form].export_ms, Math.round(tiers.export.wall_ms.median));
+    assert.equal(
+      summary.thresholds_n1000[form].peak_rss_mb,
+      Math.max(
+        tiers['scan-cold'].peak_rss_mb.max,
+        tiers['scan-hot'].peak_rss_mb.max,
+        tiers.validate.peak_rss_mb.max,
+        tiers.export.peak_rss_mb.max,
+      ),
+    );
+    for (const item of nextBaseline.inflection[form]) {
+      assert.equal(summary.inflection[form][item.scenario], item.classification);
+      assert.notEqual(item.classification, 'significant', '0.9.2 不应有显著超线性项');
+    }
+  }
+});
