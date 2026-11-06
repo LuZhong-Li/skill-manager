@@ -1,6 +1,8 @@
 /** 归档与本地仓库解包的安全读取。 */
 import { spawn } from 'node:child_process';
+import { once } from 'node:events';
 import {
+  createReadStream,
   createWriteStream,
   existsSync,
   lstatSync,
@@ -22,7 +24,9 @@ import {
   assertArchiveFileSize,
   budgetExceeded,
   DEFAULT_ARCHIVE_LIMITS,
+  monotonicArchiveMs,
   type ArchiveLimits,
+  type ArchiveNow,
 } from './source-archive-budget.ts';
 import { sourceError } from './source-shared.ts';
 
@@ -105,11 +109,14 @@ async function assertTarSafe(file: string, target: string, budget?: ArchiveBudge
     onReadEntry: (entry) => {
       if (failure !== null) return;
       try {
+        budget?.assertTime();
         assertEntrySafe(entry.path, target);
         assertEntryTypeSafe(entry, entry.path, target);
         // TAR 的头部大小即实际读取长度，提前计入预算就是准确的字节数检查
         budget?.admitEntry(entry.size ?? 0, entry.size ?? 0);
       } catch (error) {
+        // tar.t 会继续消费当前条目；统一在遍历结束后抛出，避免 ReadEntry 的
+        // 未监听 error 事件绕过 Promise 链并造成进程级异常。
         failure = error;
       }
     },
@@ -122,20 +129,44 @@ export async function extractTar(
   archive: string,
   dest: string,
   limits: ArchiveLimits = DEFAULT_ARCHIVE_LIMITS,
+  now: ArchiveNow = monotonicArchiveMs,
 ): Promise<void> {
   assertArchiveFileSize(archive, limits);
-  await assertTarSafe(archive, archive, new ArchiveBudget(limits, archive));
-  await tar.x({
-    file: archive,
+  const budget = new ArchiveBudget(limits, archive, now);
+  await assertTarSafe(archive, archive, budget);
+  let timeFailure: unknown = null;
+  const unpack = new tar.Unpack({
     cwd: dest,
+    // tar.x({ file }) 会按文件名推断 gzip；改为显式输入流后需保留同一语义。
+    gzip: /\.(tar\.gz|tgz)$/i.test(archive),
     preservePaths: false,
     filter: (path, entry) => {
+      budget.assertTime();
       assertEntrySafe(path, archive);
       assertEntryTypeSafe(entry, path, archive);
       ensureRealPath(dest, path);
       return true;
     },
   });
+  const input = createReadStream(archive);
+  try {
+    for await (const chunk of input) {
+      try {
+        budget.assertTime();
+      } catch (error) {
+        timeFailure = error;
+        unpack.abort(error as Error);
+        break;
+      }
+      if (!unpack.write(chunk)) await once(unpack, 'drain');
+    }
+    if (timeFailure === null) unpack.end();
+    await once(unpack, 'close');
+  } catch (error) {
+    if (timeFailure !== null) throw timeFailure;
+    throw error;
+  }
+  if (timeFailure !== null) throw timeFailure;
 }
 
 /**
@@ -172,13 +203,17 @@ export async function extractZip(
   archive: string,
   dest: string,
   limits: ArchiveLimits = DEFAULT_ARCHIVE_LIMITS,
+  now: ArchiveNow = monotonicArchiveMs,
 ): Promise<void> {
   assertArchiveFileSize(archive, limits);
-  const budget = new ArchiveBudget(limits, archive);
+  const budget = new ArchiveBudget(limits, archive, now);
   const zip = new StreamZip.async({ file: archive });
   try {
+    budget.assertTime();
     const entries = await zip.entries();
+    budget.assertTime();
     for (const entry of Object.values(entries)) {
+      budget.assertTime();
       assertEntrySafe(entry.name, archive);
     }
     for (const entry of Object.values(entries)) {

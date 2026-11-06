@@ -38,7 +38,7 @@ experience 能力（审计 P0，属产品化工作），性能基线为「冒烟
 | --- | --- | --- |
 | T1 跨进程写锁 | `tests/unit/locking.test.ts`、`tests/e2e/cli-concurrency.test.ts` | 12 + 3 |
 | T2 事务归属与原子切换 | `tests/unit/land-transaction.test.ts`、`tests/unit/host-landings-rollback.test.ts` | 5 + 4 |
-| T3 归档资源预算 | `tests/unit/source-archive-limits.test.ts` | 7 |
+| T3 归档资源预算 | `tests/unit/source-archive-limits.test.ts` | 11（含解压总耗时预算） |
 | T4 路径规范化 | `tests/unit/paths-physical.test.ts` | 10 |
 | 既有安全回归 | `tests/unit/source.test.ts`、`tests/unit/source-remote.test.ts`、`tests/e2e/reconcile-preview.test.ts` | 保持全绿 |
 
@@ -120,4 +120,7 @@ v0.9.2 是界面补齐版：把内核早已具备的 `pipeline run` 与 `experie
    GitHub Actions run `42198856481` 三平台 CI 烟测全绿（macOS 亦补齐 runs=1 的双线三档）。N=1000 所有硬阈值通过，
    无显著超线性项；详情见 `docs/benchmark/`。同时修复 CI 工作区 contract 依赖版本漂移（此前 `npm ci` 在下载不存在的
    `@skill-manager/contract@0.7.0` 时失败）。
-3. 归档预算的时间维度（解压总耗时上限）尚未实现，当前只有体积/条目/压缩比四道体积类预算。
+3. ~~归档预算的时间维度（解压总耗时上限）尚未实现~~ —— **已完成（2026-11-06）**：
+   新增 `SKILL_MANAGER_ARCHIVE_MAX_EXTRACT_MS`（默认 60 s；只计归档解析/解压，不含远端下载），
+   ZIP 与 TAR 均在预检、条目与数据流边界检查；TAR 超时时通过 `tar.Unpack.abort()` 取消完整解析器，
+   清理半截文件并稳定归入 `E-SRC-008`。`source-archive-limits` 新增 ZIP/TAR 预检和流中超时确定性回归。

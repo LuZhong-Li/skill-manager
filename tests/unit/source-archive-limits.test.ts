@@ -18,6 +18,7 @@ const SMALL_LIMITS: ArchiveLimits = {
   maxEntryBytes: 8,
   maxTotalBytes: 12,
   maxCompressionRatio: 100,
+  maxExtractMs: 1_000,
 };
 
 const CRC_TABLE = (() => {
@@ -181,6 +182,72 @@ test('M7-T0：ZIP 压缩比超过上限时按压缩炸弹拒绝', async () => {
   await rejectsTooLarge(() => extractZip(archive, outputDir(root), limits));
 });
 
+function timeoutLimits(): ArchiveLimits {
+  return {
+    maxArchiveBytes: 1024 * 1024,
+    maxEntries: 10,
+    maxEntryBytes: 1024,
+    maxTotalBytes: 1024,
+    maxCompressionRatio: 100,
+    maxExtractMs: 1,
+  };
+}
+
+/** 首次返回解压起点，后续返回超时刻；无需真实 sleep，测试不抖动。 */
+function expiredClock(): () => number {
+  let calls = 0;
+  return () => (calls++ === 0 ? 0 : 2);
+}
+
+function clockExpiringAfter(allowedCalls: number): () => number {
+  let calls = 0;
+  return () => (calls++ < allowedCalls ? 0 : 2);
+}
+
+test('M7-T6：ZIP 解压耗时超过预算时以来源大小错误中止且不落盘', async () => {
+  const root = makeTempDir('sm-archive-time-');
+  const archive = join(root, 'slow.zip');
+  writeZip(archive, [{ name: 'safe.txt', data: Buffer.from('safe') }]);
+  const out = outputDir(root);
+  await rejectsTooLarge(() => extractZip(archive, out, timeoutLimits(), expiredClock()));
+  assert.equal(existsSync(join(out, 'safe.txt')), false, '超时前不得留下目标文件');
+});
+
+test('M7-T6：TAR 预检也受同一耗时预算约束且不开始写入', async () => {
+  const root = makeTempDir('sm-archive-time-');
+  const stage = join(root, 'stage');
+  mkdirSync(stage);
+  writeFileSync(join(stage, 'safe.txt'), 'safe');
+  const archive = join(root, 'slow.tar');
+  await tar.c({ file: archive, cwd: stage }, ['safe.txt']);
+  const out = outputDir(root);
+  await rejectsTooLarge(() => extractTar(archive, out, timeoutLimits(), expiredClock()));
+  assert.equal(existsSync(join(out, 'safe.txt')), false, '预检超时不得开始写入');
+});
+
+test('M7-T6：TAR 解压在写入阶段超时会中止且不保留目标文件', async () => {
+  const root = makeTempDir('sm-archive-time-');
+  const stage = join(root, 'stage');
+  mkdirSync(stage);
+  writeFileSync(join(stage, 'stream.txt'), 'stream-content');
+  const archive = join(root, 'stream.tar');
+  await tar.c({ file: archive, cwd: stage }, ['stream.txt']);
+  const out = outputDir(root);
+  // 预检的起点、entry、admit 与解压 filter 都在预算内；真实条目数据流到来时超时。
+  await rejectsTooLarge(() => extractTar(archive, out, timeoutLimits(), clockExpiringAfter(4)));
+  assert.equal(existsSync(join(out, 'stream.txt')), false, '流内超时不得留下目标文件');
+});
+
+test('M7-T6：归档解压在条目流中超时会中止并清理半截 ZIP 文件', async () => {
+  const root = makeTempDir('sm-archive-time-');
+  const archive = join(root, 'stream-timeout.zip');
+  writeZip(archive, [{ name: 'stream.txt', data: Buffer.from('stream-content') }]);
+  const out = outputDir(root);
+  // entries 前的两次与 admitEntry 各取一次时钟；下一次 chunk guard 必须触发超时。
+  await rejectsTooLarge(() => extractZip(archive, out, timeoutLimits(), clockExpiringAfter(4)));
+  assert.equal(existsSync(join(out, 'stream.txt')), false, '流内超时不得留下半截文件');
+});
+
 test('M7-T0：伪造声明的 ZIP 在实际字节越界时中止并清理半截文件', async () => {
   const root = makeTempDir('sm-archive-limit-');
   const archive = join(root, 'liar.zip');
@@ -193,6 +260,7 @@ test('M7-T0：伪造声明的 ZIP 在实际字节越界时中止并清理半截�
     maxEntryBytes: 50,
     maxTotalBytes: 100,
     maxCompressionRatio: 10000,
+    maxExtractMs: 1_000,
   };
   await assert.rejects(
     () => extractZip(archive, out, limits),

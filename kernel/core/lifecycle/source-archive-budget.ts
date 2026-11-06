@@ -26,6 +26,15 @@ export interface ArchiveLimits {
   maxTotalBytes: number;
   /** 单条未压缩 / 压缩后 的比值上限 */
   maxCompressionRatio: number;
+  /** 单次归档解析与解压的单调时间上限（毫秒；不含远端下载时间） */
+  maxExtractMs: number;
+}
+
+/** 可注入单调时钟：生产使用 hrtime，测试无需真实 sleep。 */
+export type ArchiveNow = () => number;
+
+export function monotonicArchiveMs(): number {
+  return Number(process.hrtime.bigint() / 1000000n);
 }
 
 function envNumber(name: string, fallback: number): number {
@@ -40,6 +49,7 @@ export const DEFAULT_ARCHIVE_LIMITS: ArchiveLimits = {
   maxEntryBytes: envNumber('SKILL_MANAGER_ARCHIVE_MAX_ENTRY_BYTES', 32 * 1024 * 1024),
   maxTotalBytes: envNumber('SKILL_MANAGER_ARCHIVE_MAX_TOTAL_BYTES', 256 * 1024 * 1024),
   maxCompressionRatio: envNumber('SKILL_MANAGER_ARCHIVE_MAX_RATIO', 200),
+  maxExtractMs: envNumber('SKILL_MANAGER_ARCHIVE_MAX_EXTRACT_MS', 60_000),
 };
 
 /** 统一的超限错误：一律归入来源体积类，并点名命中的预算与实际值。 */
@@ -83,14 +93,31 @@ export class ArchiveBudget {
   private total = 0;
   private readonly limits: ArchiveLimits;
   private readonly archive: string;
+  private readonly now: ArchiveNow;
+  private readonly startedAt: number;
 
-  constructor(limits: ArchiveLimits, archive: string) {
+  constructor(limits: ArchiveLimits, archive: string, now: ArchiveNow = monotonicArchiveMs) {
     this.limits = limits;
     this.archive = archive;
+    this.now = now;
+    this.startedAt = now();
+  }
+
+  /** 在可能阻塞的解压边界检查累计时间；超时与其他预算统一使用 E-SRC-008。 */
+  assertTime(): void {
+    const elapsed = this.now() - this.startedAt;
+    if (elapsed > this.limits.maxExtractMs) {
+      throw budgetExceeded(
+        this.archive,
+        `归档解压耗时超过上限：已用 ${String(Math.ceil(elapsed))} ms，上限 ${String(this.limits.maxExtractMs)} ms`,
+        '该归档解压耗时过长，已中止；请拆分内容、检查压缩算法，或从可信来源重新获取',
+      );
+    }
   }
 
   /** 解压前登记一条条目：条目数、单条大小与压缩比。 */
   admitEntry(compressedSize: number, uncompressedSize: number): void {
+    this.assertTime();
     this.entries += 1;
     if (this.entries > this.limits.maxEntries) {
       throw budgetExceeded(
@@ -131,6 +158,7 @@ export class ArchiveBudget {
 
   /** 解压过程中按实际写出字节累计，超出累计预算立即中止。 */
   charge(bytes: number): void {
+    this.assertTime();
     this.total += bytes;
     if (this.total > this.limits.maxTotalBytes) {
       throw budgetExceeded(

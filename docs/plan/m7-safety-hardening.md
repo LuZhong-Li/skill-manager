@@ -78,7 +78,7 @@ v0.9.0 已将问题处理、经验回归与只读代码探查发布到主干，�
 
 **目标**：本地与远端归档都有统一资源上限。
 
-**执行状态**：**已完成（2026-11-06）**。预算逻辑集中在 `kernel/core/lifecycle/source-archive-budget.ts`；`extractZip` / `extractTar` 默认接入 `DEFAULT_ARCHIVE_LIMITS`，因此本地归档（`source.ts`）与远端下载归档（`source-remote.ts`）自动同受约束。回归见 `tests/unit/source-archive-limits.test.ts`（7 项）。
+**执行状态**：**已完成（2026-11-06）**。预算逻辑集中在 `kernel/core/lifecycle/source-archive-budget.ts`；`extractZip` / `extractTar` 默认接入 `DEFAULT_ARCHIVE_LIMITS`，因此本地归档（`source.ts`）与远端下载归档（`source-remote.ts`）自动同受约束。后续补齐第五维 `SKILL_MANAGER_ARCHIVE_MAX_EXTRACT_MS`（默认 60 秒、只计归档解析与解压）：ZIP 在目录/条目/chunk 边界检查，TAR 在预检/条目/归档输入块边界检查；超时以 `tar.Unpack.abort()` 取消完整解析器，避免后台继续写盘。回归见 `tests/unit/source-archive-limits.test.ts`（11 项）。
 
 - [x] 在单一模块定义可配置常量：archive 文件大小、条目数、单条解压大小、累计解压大小、压缩比、写入时间预算。
 - [x] 本地 archive 在解析前检查文件体积；远端继续保留下载字节上限，并接入同一预算。
