@@ -1,4 +1,4 @@
-/** experience 鍛戒护澶勭悊鍣細缁忛獙鍥炲綊鐨勬煡璇㈠叆鍙ｃ€?*/
+/** experience 指令处理器：经验回归的查询入口。 */
 
 import { CODES } from '@skill-manager/contract';
 import { finding } from '../../../store/findings.ts';
@@ -18,7 +18,7 @@ function experiencesDirOf(args: ParsedArgs): string {
   return layoutOf(workspaceRootOf(args)).experiencesDir;
 }
 
-/** experience list锛氬垪鍑哄叏閮ㄥ巻鍙茬粡楠岋紙鍊掑簭锛夈€?*/
+/** experience list：列出全部历史经验（倒序）。 */
 const listHandler: CommandHandler = async (context): Promise<Result<unknown>> => {
   const limitRaw = option(context.args, 'limit');
   const limit = limitRaw ? Math.max(1, Math.min(50, parseInt(limitRaw, 10) || 10)) : 10;
@@ -39,7 +39,7 @@ const listHandler: CommandHandler = async (context): Promise<Result<unknown>> =>
   });
 };
 
-/** experience search <鍏抽敭璇?锛氭寜鍏抽敭璇嶆绱€?*/
+/** experience search <关键词>：按关键词检索。 */
 const searchHandler: CommandHandler = async (context): Promise<Result<unknown>> => {
   const keyword = option(context.args, 'query') ?? context.args.positionals[0];
   if (!keyword) {
@@ -69,7 +69,7 @@ const searchHandler: CommandHandler = async (context): Promise<Result<unknown>> 
   });
 };
 
-/** experience show <id>锛氭煡鐪嬪崟鏉＄粡楠岃鎯呫€?*/
+/** experience show <id>：查看单条经验详情。 */
 const showHandler: CommandHandler = async (context): Promise<Result<unknown>> => {
   const id = context.args.positionals[0];
   if (!id) {
@@ -106,7 +106,7 @@ const showHandler: CommandHandler = async (context): Promise<Result<unknown>> =>
   return buildResult(context.args.command, [], [], { data: result.record });
 };
 
-/** 娉ㄥ唽 experience 鍛戒护銆?*/
+/** 注册 experience 指令。 */
 export function registerExperienceCommands(registerFn: (spec: CommandSpec) => void): void {
   registerFn({ name: 'experience list', handler: listHandler });
   registerFn({ name: 'experience search', handler: searchHandler });
