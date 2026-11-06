@@ -85,6 +85,24 @@ experience 能力（审计 P0，属产品化工作），性能基线为「冒烟
 发布前复跑结果：内核冒烟 `version 0.9.1`、生产内核探测 `PRODUCTION_KERNEL_RESULT=ok version=0.9.1`、
 界面冒烟 94/94（连续两次）。
 
+## 4.2 发版记录：v0.9.2
+
+v0.9.2 是界面补齐版：把内核早已具备的 `pipeline run` 与 `experience list|search|show` 搬进界面
+（新增「问题处理」「经验库」两页），并修正 `--help` 退出码。
+
+| 项目 | 值 |
+| --- | --- |
+| 版本提交 | `761832c release: 0.9.2（界面补齐问题处理与经验库）` |
+| tag | `v0.9.2`（轻量 tag，指向 `761832c`） |
+| Release | https://github.com/LuZhong-Li/skill-manager/releases/tag/v0.9.2 （非 draft / 非 prerelease） |
+| 资产 | `skill-manager-0.9.2-portable.exe`，114,251,862 字节 |
+| SHA256 | `9582DDBF3EB36FD970B577E5521A21D31CFF77EE5D540B31F32D097A9B6907D2`（与 Release digest 一致） |
+| 自用测试包 | `D:\skill-manager-app\` 已更新为 0.9.2（启动器指向新产物，旧 0.9.1 产物已移除） |
+| 版本守卫 | `release-guard.mjs --tag v0.9.2` 通过（tag / CHANGELOG / package.json 三方一致） |
+
+发布前复跑结果：常规测试 964 项（963 通过 + 1 平台跳过）、内核冒烟 `version 0.9.2`、
+生产内核探测 `PRODUCTION_KERNEL_RESULT=ok version=0.9.2 actions=6`、界面冒烟 106/106。
+
 ## 5. 契约与文档同步
 
 - **CLI 契约**：指令数、选项与退出码均未变化，`check:contract` 通过；本次只新增环境变量旋钮
