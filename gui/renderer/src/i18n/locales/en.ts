@@ -41,6 +41,13 @@ export default {
     enabledOnly: 'Enabled only',
     disabledOnly: 'Disabled only',
     invalidOnly: 'Invalid only',
+    searchAria: 'Search Skills',
+    searchPlaceholder: 'Search id, name, source or target',
+    sortAria: 'Sort Skills',
+    sortById: 'Sort by id',
+    sortByName: 'Sort by name',
+    sortByUpdated: 'Sort by last change',
+    sortByState: 'Sort by state',
   },
   dashboard: {
     uninitializedTitle: 'Workspace is not initialized',
@@ -51,6 +58,9 @@ export default {
     emptyBody: 'Run a scan to register Skills already present in the workspace.',
     scanNow: 'Scan now',
     inventoryHint: 'Inventory does not require initialization and does not modify directories.',
+    filterEmptyTitle: 'No Skill matches the current filters',
+    filterEmptyBody: 'Adjust the keyword or state filter to see more results.',
+    resetFilters: 'Reset filters',
   },
   skill: {
     unknownVersion: 'Version not declared',

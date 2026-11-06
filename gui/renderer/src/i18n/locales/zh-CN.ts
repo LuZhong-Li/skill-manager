@@ -41,6 +41,13 @@ export default {
     enabledOnly: '仅已启用',
     disabledOnly: '仅已禁用',
     invalidOnly: '仅失效',
+    searchAria: '检索 Skill',
+    searchPlaceholder: '检索标识、名称、来源或落位目标',
+    sortAria: '排序方式',
+    sortById: '按标识排序',
+    sortByName: '按名称排序',
+    sortByUpdated: '按最近变更排序',
+    sortByState: '按状态排序',
   },
   dashboard: {
     uninitializedTitle: '工作区尚未初始化',
@@ -51,6 +58,9 @@ export default {
     emptyBody: '执行一次扫描，把工作区里已有的 Skill 登记进来。',
     scanNow: '立即扫描',
     inventoryHint: '盘点不需要初始化工作区，也不会改动任何目录。',
+    filterEmptyTitle: '没有符合当前筛选条件的 Skill',
+    filterEmptyBody: '调整关键词或状态筛选后再看。',
+    resetFilters: '清除筛选条件',
   },
   skill: {
     unknownVersion: '未声明版本',

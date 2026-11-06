@@ -90,6 +90,11 @@ main {
   width: 148px;
 }
 
+/* 检索框比下拉更宽：它承载用户输入的任意子串，太窄会看不到已输入的词 */
+.filter.search {
+  width: 220px;
+}
+
 .update-check {
   position: relative;
 }

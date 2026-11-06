@@ -34,7 +34,6 @@ import {
   type LanguageMode,
 } from './i18n/language.ts';
 import {
-  cardStateOf,
   type BackupRow,
   type KernelResult,
   type PluginCandidate,
@@ -44,6 +43,7 @@ import {
   type UpdateCheckReport,
   type UpdateSettings,
 } from './types.ts';
+import { DEFAULT_SKILL_QUERY, selectSkills, type SkillListQuery } from './skill-list.ts';
 
 type View =
   | 'dashboard'
@@ -58,7 +58,8 @@ type View =
 const kernel = useKernel();
 const view = ref<View>('dashboard');
 const experienceFocus = ref<string | null>(null);
-const filterState = ref('');
+/** 主列表的检索 / 排序 / 状态筛选；三者组合生效，均为纯前端展示层过滤 */
+const listQuery = ref<SkillListQuery>({ ...DEFAULT_SKILL_QUERY });
 const selected = ref<SkillSummary | null>(null);
 const detail = ref<KernelResult | null>(null);
 const detailLoading = ref(false);
@@ -95,11 +96,7 @@ const updateSettings = ref<UpdateSettings>({
 });
 let unsubscribeUpdates: (() => void) | null = null;
 
-const visibleRecords = computed(() =>
-  filterState.value === ''
-    ? kernel.records.value
-    : kernel.records.value.filter((record) => cardStateOf(record) === filterState.value),
-);
+const visibleRecords = computed(() => selectSkills(kernel.records.value, listQuery.value));
 const states = computed(() => kernel.summarizeStates());
 
 async function openDetail(record: SkillSummary): Promise<void> {
@@ -523,7 +520,33 @@ function changeLanguage(mode: LanguageMode, value: SupportedLocale): void {
           />
         </button>
         <span class="spacer" />
-        <select v-model="filterState" class="filter" :aria-label="$t('toolbar.filterAria')">
+        <input
+          v-if="view === 'dashboard'"
+          v-model="listQuery.keyword"
+          class="filter search"
+          type="search"
+          data-testid="skill-search"
+          :aria-label="$t('toolbar.searchAria')"
+          :placeholder="$t('toolbar.searchPlaceholder')"
+        />
+        <select
+          v-if="view === 'dashboard'"
+          v-model="listQuery.sort"
+          class="filter"
+          data-testid="skill-sort"
+          :aria-label="$t('toolbar.sortAria')"
+        >
+          <option value="id">{{ $t('toolbar.sortById') }}</option>
+          <option value="name">{{ $t('toolbar.sortByName') }}</option>
+          <option value="updated_at">{{ $t('toolbar.sortByUpdated') }}</option>
+          <option value="status">{{ $t('toolbar.sortByState') }}</option>
+        </select>
+        <select
+          v-model="listQuery.state"
+          class="filter"
+          data-testid="skill-state-filter"
+          :aria-label="$t('toolbar.filterAria')"
+        >
           <option value="">{{ $t('common.allStates') }}</option>
           <option value="enabled">{{ $t('toolbar.enabledOnly') }}</option>
           <option value="disabled">{{ $t('toolbar.disabledOnly') }}</option>
@@ -543,11 +566,13 @@ function changeLanguage(mode: LanguageMode, value: SupportedLocale): void {
       <DashboardView
         v-if="view === 'dashboard'"
         :initialized="kernel.initialized.value"
-        :records="visibleRecords"
+        :records="visibleRecords.records"
+        :total="visibleRecords.total"
         @init="kernel.run(['init']).then(kernel.refresh)"
         @scan="kernel.run(['scan']).then(kernel.refresh)"
         @inventory="view = 'inventory'"
         @open="openDetail"
+        @reset-filters="listQuery = { ...DEFAULT_SKILL_QUERY }"
       />
 
       <HostInventoryView

@@ -525,6 +525,12 @@
       "layer": "gui"
     },
     {
+      "path": "gui/renderer/src/skill-list.ts",
+      "kind": "source",
+      "region": "gui-renderer",
+      "layer": "gui"
+    },
+    {
       "path": "gui/renderer/src/types.ts",
       "kind": "source",
       "region": "gui-renderer",
@@ -1833,6 +1839,12 @@
       "layer": "scripts"
     },
     {
+      "path": "scripts/gui-smoke-skill-list.mjs",
+      "kind": "source",
+      "region": "scripts",
+      "layer": "scripts"
+    },
+    {
       "path": "scripts/gui-smoke-workspace-gate.mjs",
       "kind": "source",
       "region": "scripts",
@@ -2429,6 +2441,13 @@
       "from": "gui/renderer/src/App.vue",
       "to": "gui/renderer/src/plugin-presentation.ts",
       "specifier": "./plugin-presentation.ts",
+      "from_layer": "gui",
+      "to_layer": "gui"
+    },
+    {
+      "from": "gui/renderer/src/App.vue",
+      "to": "gui/renderer/src/skill-list.ts",
+      "specifier": "./skill-list.ts",
       "from_layer": "gui",
       "to_layer": "gui"
     },
@@ -3155,6 +3174,13 @@
     },
     {
       "from": "gui/renderer/src/plugin-presentation.ts",
+      "to": "gui/renderer/src/types.ts",
+      "specifier": "./types.ts",
+      "from_layer": "gui",
+      "to_layer": "gui"
+    },
+    {
+      "from": "gui/renderer/src/skill-list.ts",
       "to": "gui/renderer/src/types.ts",
       "specifier": "./types.ts",
       "from_layer": "gui",
@@ -9896,6 +9922,13 @@
     },
     {
       "from": "scripts/gui-smoke.mjs",
+      "to": "scripts/gui-smoke-skill-list.mjs",
+      "specifier": "./gui-smoke-skill-list.mjs",
+      "from_layer": "scripts",
+      "to_layer": "scripts"
+    },
+    {
+      "from": "scripts/gui-smoke.mjs",
       "to": "scripts/gui-smoke-workspace-gate.mjs",
       "specifier": "./gui-smoke-workspace-gate.mjs",
       "from_layer": "scripts",
@@ -9924,10 +9957,10 @@
     }
   ],
   "stats": {
-    "source_files": 322,
+    "source_files": 324,
     "asset_nodes": 1,
-    "nodes": 323,
-    "edges": 1140,
+    "nodes": 325,
+    "edges": 1143,
     "unresolved": 0,
     "cycles": 0,
     "layers": {
@@ -9935,9 +9968,9 @@
       "core": 95,
       "dispatch": 69,
       "entry": 2,
-      "gui": 79,
+      "gui": 80,
       "public": 1,
-      "scripts": 53,
+      "scripts": 54,
       "store": 12
     },
     "outgoing": {
@@ -9945,9 +9978,9 @@
       "core": 346,
       "dispatch": 539,
       "entry": 10,
-      "gui": 159,
+      "gui": 161,
       "public": 6,
-      "scripts": 39,
+      "scripts": 40,
       "store": 22
     },
     "incoming": {
@@ -9955,9 +9988,9 @@
       "core": 403,
       "dispatch": 219,
       "entry": 1,
-      "gui": 159,
+      "gui": 161,
       "public": 1,
-      "scripts": 38,
+      "scripts": 39,
       "store": 300
     },
     "cross_layer_edges": {

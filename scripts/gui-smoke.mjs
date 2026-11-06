@@ -24,6 +24,7 @@ import { runEmptyWorkspaceInventoryChecks } from './gui-smoke-inventory.mjs';
 import { runInventoryActionChecks } from './gui-smoke-inventory-actions.mjs';
 import { runAuditMatrixSmoke } from './gui-smoke-audit.mjs';
 import { runPipelineSmoke } from './gui-smoke-pipeline.mjs';
+import { runSkillListSmoke } from './gui-smoke-skill-list.mjs';
 import { connectDebugger, waitForTarget } from './gui-smoke-cdp.mjs';
 import { runPluginSmoke } from './gui-smoke-plugin.mjs';
 import { killTree, readTextOrFallback } from './gui-smoke-launch.mjs';
@@ -292,6 +293,9 @@ async function main() {
     );
 
     const smokeContext = { evaluate, waitFor, check, workspace, hostHome, hostLocal, userData };
+    // 主列表检索 / 排序 / 组合筛选：必须在离开仪表盘之前跑，且跑完会复位筛选
+    await runSkillListSmoke(smokeContext);
+    console.log('[smoke] skill list checks complete');
     console.log('[smoke] base UI ready');
     await runPluginSmoke(smokeContext);
     console.log('[smoke] plugin checks complete');
