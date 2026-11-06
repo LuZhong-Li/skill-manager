@@ -1,6 +1,6 @@
 {
   "schema_version": "1",
-  "generated_at": "2026-11-03T14:24:08.150Z",
+  "generated_at": "2026-11-06T06:29:38.252Z",
   "complexity": {
     "threshold": 10,
     "entries": [
@@ -90,7 +90,7 @@
         "function": "landPlan",
         "scope": "landPlan",
         "signature": "export function landPlan(request: LandRequest): LandResult {",
-        "complexity": 15,
+        "complexity": 14,
         "owner": "host",
         "clearedBy": "P1-a"
       },

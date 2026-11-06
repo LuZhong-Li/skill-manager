@@ -96,16 +96,24 @@ await withWriterLock(layoutOf(root), async () => {
 `,
   );
   const run = (name: string) =>
-    new Promise<number | null>((resolve) => {
+    new Promise<{ code: number | null; out: string }>((resolve) => {
       const child = spawn(
         process.execPath,
         ['--experimental-strip-types', script, root, log, name],
-        { stdio: 'ignore' },
+        { stdio: ['ignore', 'pipe', 'pipe'] },
       );
-      child.on('exit', (code) => resolve(code));
+      const chunks: string[] = [];
+      child.stdout.on('data', (chunk: Buffer) => chunks.push(chunk.toString('utf8')));
+      child.stderr.on('data', (chunk: Buffer) => chunks.push(chunk.toString('utf8')));
+      child.on('error', (error) => resolve({ code: -1, out: String(error) }));
+      child.on('exit', (code) => resolve({ code, out: chunks.join('') }));
     });
-  const codes = await Promise.all([run('a'), run('b')]);
-  assert.deepEqual(codes, [0, 0], '两个进程都应成功结束');
+  const results = await Promise.all([run('a'), run('b')]);
+  assert.deepEqual(
+    results.map((item) => item.code),
+    [0, 0],
+    `两个进程都应成功结束：${results.map((item) => item.out).join(' | ')}`,
+  );
   const lines = readFileSync(log, 'utf8').trim().split('\n');
   assert.equal(lines.length, 4, '两个进程各写进入与退出两行');
   // 严格交替：enter 之后必须紧跟同一进程的 exit

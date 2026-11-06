@@ -11,26 +11,28 @@
  * 四、`landable = false` 的落位项（指令文件载体）只登记不落盘；
  * 五、`dryRun` 只产出将执行的变更清单，不触碰磁盘。
  */
-import { copyFileSync, mkdirSync, rmdirSync, rmSync } from 'node:fs';
+import { copyFileSync, mkdirSync, readdirSync, rmdirSync, rmSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
+import { randomUUID } from 'node:crypto';
 import { CODES, type Change, type Finding } from '@skill-manager/contract';
 import { finding } from '../../store/findings.ts';
 import { KernelError } from '../../store/errors.ts';
-import { atomicWriteFile } from '../../store/atomic/index.ts';
+import { atomicWriteFile, renameWithRetry } from '../../store/atomic/index.ts';
 import { createBackup } from '../../store/backup-fs/index.ts';
 import {
+  copyTreeRecursive,
   deliverFiles,
   isCopyDisabled,
   isDirectory,
+  listTreeFiles,
   pathExists,
-  removeTree,
   replaceTree,
   setCopyVisibility,
   type DeliveryPlanEntry,
 } from '../../store/library-fs/index.ts';
 import { computeChecksum } from '../integrity/index.ts';
 import type { WorkspaceLayout } from '../../store/workspace/index.ts';
-import type { PlacementPlan } from './types.ts';
+import type { PlacementEntry, PlacementPlan } from './types.ts';
 import type { ArtifactKind } from '../render/types.ts';
 
 const SOURCE = 'land';
@@ -47,6 +49,8 @@ export interface LandRequest {
   fileMap?: DeliveryPlanEntry[];
   /** 预演：只产出变更清单，不写盘 */
   dryRun?: boolean;
+  /** 事务标识；缺省由本次落位自行生成 */
+  transactionId?: string;
 }
 
 /** 落位结果 */
@@ -72,6 +76,12 @@ export interface LandWrite {
   root_existed_before: boolean;
   parent_existed_before: boolean;
   backup_dir: string | undefined;
+  /** 产生该落位的事务标识；回滚只处理本次事务拥有的文件 */
+  transaction_id: string;
+  /** 本次事务写入该落位的条目（相对根目录，正斜杠分隔）；无备份时回滚只删这些 */
+  owned_entries: string[];
+  /** 本次事务为目标文件新建的父目录；回滚按逆序清理空目录 */
+  created_dirs: string[];
 }
 
 /**
@@ -118,6 +128,7 @@ function backupBeforeWrite(input: {
 export function landPlan(request: LandRequest): LandResult {
   const { plan, workspace, now } = request;
   const dryRun = request.dryRun === true;
+  const transactionId = request.transactionId ?? randomUUID();
   const changes: Change[] = [];
   const skipped: Array<{ target_path: string; reason: string }> = [];
   const backups: string[] = [];
@@ -151,6 +162,8 @@ export function landPlan(request: LandRequest): LandResult {
     const rootExistedBefore = pathExists(entry.root_path);
     const parentExistedBefore = pathExists(dirname(entry.target_path));
     let backup: ReturnType<typeof createBackup> | undefined;
+    const ownedEntries: string[] = [];
+    const createdDirs: string[] = [];
     if (!dryRun) {
       backup = backupBeforeWrite({
         workspace,
@@ -161,16 +174,14 @@ export function landPlan(request: LandRequest): LandResult {
       if (backup !== undefined) backups.push(backup.portableDir);
 
       if (directoryTarget) {
-        const targetDir = entry.root_path;
-        mkdirSync(targetDir, { recursive: true });
-        if (request.sourceDir !== undefined) {
-          // 资产按逐文件映射（缺省整目录复制）；随后以渲染产物覆盖技能元数据文件
-          deliverFiles(request.sourceDir, targetDir, request.fileMap ?? []);
-        }
+        // 先在兄弟目录组装，再整体原子切换：宿主可见路径要么是旧内容，要么是新内容
+        ownedEntries.push(
+          ...installDirectoryTarget({ entry, request, rootExistedBefore, transactionId }),
+        );
       } else {
-        mkdirSync(dirname(entry.target_path), { recursive: true });
+        createdDirs.push(...ensureParentDirs(entry.target_path));
+        atomicWriteFile(entry.target_path, entry.content);
       }
-      atomicWriteFile(entry.target_path, entry.content);
     }
 
     changes.push({
@@ -191,6 +202,9 @@ export function landPlan(request: LandRequest): LandResult {
       root_existed_before: rootExistedBefore,
       parent_existed_before: parentExistedBefore,
       backup_dir: backupDirOf(backup),
+      transaction_id: transactionId,
+      owned_entries: ownedEntries,
+      created_dirs: createdDirs,
     });
   }
 
@@ -215,11 +229,96 @@ function backupDirOf(backup: ReturnType<typeof createBackup> | undefined): strin
   return backup === undefined ? undefined : backup.dir;
 }
 
+/** 目录类落位：在兄弟目录组装完整副本，确认目标未被他人改变后再整体原子切换 */
+function installDirectoryTarget(input: {
+  entry: PlacementEntry;
+  request: LandRequest;
+  rootExistedBefore: boolean;
+  transactionId: string;
+}): string[] {
+  const { entry, request, rootExistedBefore, transactionId } = input;
+  const staging = join(
+    dirname(entry.root_path),
+    `.${basename(entry.root_path)}.staging-${transactionId.slice(0, 8)}`,
+  );
+  resetDir(staging);
+  try {
+    // 保留既有副本中未被本次落位覆盖的文件（落位是合并而非清空）
+    if (rootExistedBefore) copyTreeRecursive(entry.root_path, staging);
+    if (request.sourceDir !== undefined) {
+      // 资产按逐文件映射（缺省整目录复制）；随后以渲染产物覆盖技能元数据文件
+      deliverFiles(request.sourceDir, staging, request.fileMap ?? []);
+    }
+    atomicWriteFile(join(staging, basename(entry.target_path)), entry.content);
+    // 切换前再次确认目标状态：检查之后若被其他参与方创建或删除，拒绝覆盖
+    if (pathExists(entry.root_path) !== rootExistedBefore) {
+      throw new KernelError({
+        code: CODES.CONFLICT_OCCUPIED,
+        source: SOURCE,
+        target: entry.root_path,
+        message: '落位目标在检查后被其他进程改变，已中止写入并保留对方改动',
+        remedy: '请确认是否有其他程序或另一个 skill-manager 实例在写同一宿主目录，然后重试',
+      });
+    }
+    switchIn(staging, entry.root_path);
+    return listTreeFiles(entry.root_path);
+  } catch (error) {
+    discardDir(staging);
+    throw error;
+  }
+}
+
+/** 原子切换：目标已存在时先移到同父临时名，新内容就位后再清理旧内容 */
+function switchIn(staging: string, target: string): void {
+  if (!pathExists(target)) {
+    renameWithRetry(staging, target);
+    return;
+  }
+  const previous = `${staging}.previous`;
+  renameWithRetry(target, previous);
+  try {
+    renameWithRetry(staging, target);
+  } catch (error) {
+    renameWithRetry(previous, target);
+    throw error;
+  }
+  discardDir(previous);
+}
+
+/** 逐级创建父目录，并记录本次新建的层级；回滚按逆序清理这些空目录 */
+function ensureParentDirs(target: string): string[] {
+  const missing: string[] = [];
+  let current = dirname(target);
+  while (!pathExists(current)) {
+    missing.unshift(current);
+    const parent = dirname(current);
+    if (parent === current) break;
+    current = parent;
+  }
+  mkdirSync(dirname(target), { recursive: true });
+  return missing;
+}
+
+function resetDir(dir: string): void {
+  rmSync(dir, { recursive: true, force: true });
+  mkdirSync(dir, { recursive: true });
+}
+
+/** 清理临时目录；清理失败不掩盖原始错误 */
+function discardDir(dir: string): void {
+  try {
+    rmSync(dir, { recursive: true, force: true });
+  } catch {
+    // 残留的临时目录以 .staging-/.previous 命名，不会被当作副本内容读取
+  }
+}
+
 /**
  * 把一次落位回滚到写前状态。
  *
- * 账本写入失败时由调用方触发；按写入逆序恢复，技能形态恢复整个副本目录，
- * 规则形态只恢复目标文件，避免误删同一规则目录中的其他文件。
+ * 账本写入失败时由调用方触发；按写入逆序恢复。
+ * 恢复依据是本次事务显式记录的归属信息，而不是「当前路径是否存在」：
+ * 有完整备份时整体恢复；无备份时只删除本事务写过的条目，绝不递归删除他人内容。
  */
 export function rollbackLandWrites(writes: readonly LandWrite[]): void {
   for (const write of [...writes].reverse()) {
@@ -236,11 +335,10 @@ function restoreSkillWrite(write: LandWrite): void {
     replaceTree(join(write.backup_dir, 'content'), write.root_path);
     return;
   }
-  if (write.root_existed_before) {
-    rmSync(write.target_path, { force: true });
-    return;
+  for (const relative of [...write.owned_entries].reverse()) {
+    rmSync(join(write.root_path, ...relative.split('/')), { force: true });
   }
-  removeTree(write.root_path);
+  pruneEmptyDirs(write.root_path);
 }
 
 function restoreFileWrite(write: LandWrite): void {
@@ -252,14 +350,41 @@ function restoreFileWrite(write: LandWrite): void {
     copyFileSync(saved, write.target_path);
     return;
   }
-  rmSync(write.target_path, { force: true });
-  if (!write.parent_existed_before) {
+  // 只有写前不存在时才可确认该文件归本事务所有
+  if (!write.existed_before) rmSync(write.target_path, { force: true });
+  for (const dir of [...write.created_dirs].reverse()) {
     try {
-      rmdirSync(dirname(write.target_path));
+      rmdirSync(dir);
     } catch {
       // 目录非空说明写入期间还有其他文件，保留目录，不扩大回滚范围。
     }
   }
+}
+
+/** 自底向上删除空目录；遇到非空即停止，不扩大回滚范围 */
+function pruneEmptyDirs(root: string): void {
+  for (const dir of collectDirsPostOrder(root)) {
+    try {
+      rmdirSync(dir);
+    } catch {
+      return;
+    }
+  }
+}
+
+/** 后序收集目录：子目录先于父目录，便于自底向上清理 */
+function collectDirsPostOrder(root: string, collected: string[] = []): string[] {
+  let entries;
+  try {
+    entries = readdirSync(root, { withFileTypes: true });
+  } catch {
+    return collected;
+  }
+  for (const entry of entries) {
+    if (entry.isDirectory()) collectDirsPostOrder(join(root, entry.name), collected);
+  }
+  collected.push(root);
+  return collected;
 }
 
 /**

@@ -116,7 +116,7 @@ export function countTreeFiles(target: string): number {
  * 根因：fs.cpSync({recursive:true}) 在源路径含非 ASCII 字符时触发 STATUS_STACK_BUFFER_OVERRUN，
  * 应用层 try/catch 无法捕获。改用 readdirSync + copyFileSync 逐文件复制。
  */
-function copyTreeRecursive(sourceDir: string, destDir: string): void {
+export function copyTreeRecursive(sourceDir: string, destDir: string): void {
   mkdirSync(destDir, { recursive: true });
   const entries = readdirSync(sourceDir, { withFileTypes: true });
   for (const entry of entries) {
