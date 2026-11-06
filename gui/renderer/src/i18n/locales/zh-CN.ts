@@ -4,6 +4,8 @@ import inventoryAdopt from './inventory-adopt-zh-CN.ts';
 import inventoryRootEmpty from './inventory-root-empty-zh-CN.ts';
 import inventoryRootState from './inventory-root-state-zh-CN.ts';
 import audit from './audit-zh-CN.ts';
+import common from './common-zh-CN.ts';
+import pipeline from './pipeline-zh-CN.ts';
 
 export default {
   app: {
@@ -22,40 +24,11 @@ export default {
     backup: '备份管理',
     plugins: '插件（扩展）',
     inventory: '全机盘点',
+    pipeline: '问题处理',
+    experience: '经验库',
     settings: '设置',
   },
-  common: {
-    cancel: '取消',
-    close: '关闭',
-    confirm: '确认',
-    confirmExecute: '确认执行',
-    preview: '预览',
-    execute: '执行',
-    recover: '恢复',
-    export: '导出',
-    import: '导入',
-    scan: '扫描',
-    refresh: '刷新',
-    retry: '重试',
-    details: '详情',
-    loading: '正在加载…',
-    completed: '已完成',
-    failed: '失败',
-    skipped: '已跳过',
-    cancelled: '已取消',
-    unknown: '未知',
-    notDeclared: '未声明',
-    none: '无',
-    error: '错误',
-    warning: '警告',
-    notAvailable: '不可用',
-    noDetail: '（无明细）',
-    noData: '暂无数据',
-    enabled: '已启用',
-    disabled: '已禁用',
-    invalid: '失效',
-    allStates: '全部状态',
-  },
+  common,
   toolbar: {
     installSkill: '安装 Skill',
     rescan: '重新扫描',
@@ -481,4 +454,5 @@ export default {
   },
   audit,
   errors,
+  ...pipeline,
 } as const;

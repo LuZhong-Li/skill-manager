@@ -112,3 +112,65 @@ export interface PluginHosts {
   builtin: PluginHostOption[];
   third_party: PluginHostOption[];
 }
+
+/** 代码证据摘要：pipeline run 的探查结论投影，界面只展示不推导。 */
+export interface PipelineEvidence {
+  probed: boolean;
+  root: string | null;
+  stack: string[];
+  suspects: string[];
+  related_tests: string[];
+  checks: string[];
+  warnings: string[];
+}
+
+/** pipeline run 结果载荷中的经验回归归因。 */
+export interface PipelineAdaptation {
+  host: string;
+  sample_size: number;
+  host_sample_size: number;
+  prefilled_questions: string[];
+  skipped_stages: string[];
+  similar_experience: string | null;
+}
+
+/** pipeline run 的 data 载荷。 */
+export interface PipelineRunData {
+  message: string;
+  dry_run: boolean;
+  applied: boolean;
+  output_dir: string;
+  provider: string;
+  host: string;
+  documents: string[];
+  experience_id: string | null;
+  experience_applied?: boolean;
+  unreadable_experiences?: number;
+  evidence: PipelineEvidence;
+  experience_adapted?: PipelineAdaptation;
+}
+
+/** experience list / search 的一行。 */
+export interface ExperienceSummary {
+  id: string;
+  problem: string;
+  kind: string;
+  stages: string[];
+  createdAt: string;
+  host: string;
+  provider?: string;
+}
+
+/** experience show 的完整记录。 */
+export interface ExperienceDetail extends ExperienceSummary {
+  skippedStages?: string[];
+  decisions?: Array<{ questionId?: string; question: string; answer: string }>;
+  docTypes?: string[];
+  durationMs?: number;
+  evidence?: {
+    root: string;
+    stack: string[];
+    suspects: string[];
+    checks: string[];
+  };
+}

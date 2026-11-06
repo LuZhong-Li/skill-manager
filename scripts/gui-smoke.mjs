@@ -23,6 +23,7 @@ import {
 import { runEmptyWorkspaceInventoryChecks } from './gui-smoke-inventory.mjs';
 import { runInventoryActionChecks } from './gui-smoke-inventory-actions.mjs';
 import { runAuditMatrixSmoke } from './gui-smoke-audit.mjs';
+import { runPipelineSmoke } from './gui-smoke-pipeline.mjs';
 import { connectDebugger, waitForTarget } from './gui-smoke-cdp.mjs';
 import { runPluginSmoke } from './gui-smoke-plugin.mjs';
 import { killTree, readTextOrFallback } from './gui-smoke-launch.mjs';
@@ -297,6 +298,9 @@ async function main() {
     await runInventoryActionChecks(smokeContext);
     console.log('[smoke] inventory checks complete');
     await runAuditMatrixSmoke(smokeContext);
+    // M7 GUI：问题处理 → 文档包 → 经验库闭环（只用 data-* 选择器，切换语言也稳定）
+    await runPipelineSmoke(smokeContext);
+    console.log('[smoke] pipeline and experience checks complete');
     // T2/T3：设置默认关闭；即时检查触发角标，点击角标进入已有结果视图。
     await evaluate(
       "[...document.querySelectorAll('button')].find((b) => b.textContent.trim() === '设置')?.click()",

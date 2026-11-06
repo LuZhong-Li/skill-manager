@@ -4,6 +4,8 @@ import inventoryAdopt from './inventory-adopt-en.ts';
 import inventoryRootEmpty from './inventory-root-empty-en.ts';
 import inventoryRootState from './inventory-root-state-en.ts';
 import audit from './audit-en.ts';
+import common from './common-en.ts';
+import pipeline from './pipeline-en.ts';
 
 export default {
   app: {
@@ -22,40 +24,11 @@ export default {
     backup: 'Backups',
     plugins: 'Plugins',
     inventory: 'Inventory',
+    pipeline: 'Problem handling',
+    experience: 'Experience',
     settings: 'Settings',
   },
-  common: {
-    cancel: 'Cancel',
-    close: 'Close',
-    confirm: 'Confirm',
-    confirmExecute: 'Confirm execution',
-    preview: 'Preview',
-    execute: 'Execute',
-    recover: 'Restore',
-    export: 'Export',
-    import: 'Import',
-    scan: 'Scan',
-    refresh: 'Refresh',
-    retry: 'Retry',
-    details: 'Details',
-    loading: 'Loading…',
-    completed: 'Completed',
-    failed: 'Failed',
-    skipped: 'Skipped',
-    cancelled: 'Cancelled',
-    unknown: 'Unknown',
-    notDeclared: 'Not declared',
-    none: 'None',
-    error: 'Error',
-    warning: 'Warning',
-    notAvailable: 'Not available',
-    noDetail: '(no details)',
-    noData: 'No data',
-    enabled: 'Enabled',
-    disabled: 'Disabled',
-    invalid: 'Invalid',
-    allStates: 'All states',
-  },
+  common,
   toolbar: {
     installSkill: 'Install Skill',
     rescan: 'Rescan',
@@ -499,4 +472,5 @@ export default {
   },
   audit,
   errors,
+  ...pipeline,
 } as const;

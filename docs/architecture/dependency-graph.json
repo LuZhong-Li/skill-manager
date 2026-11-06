@@ -249,6 +249,12 @@
       "layer": "gui"
     },
     {
+      "path": "gui/renderer/src/components/ExperienceView.vue",
+      "kind": "source",
+      "region": "gui-renderer",
+      "layer": "gui"
+    },
+    {
       "path": "gui/renderer/src/components/host-inventory/InventoryActionDialog.vue",
       "kind": "source",
       "region": "gui-renderer",
@@ -286,6 +292,12 @@
     },
     {
       "path": "gui/renderer/src/components/InstallDialog.vue",
+      "kind": "source",
+      "region": "gui-renderer",
+      "layer": "gui"
+    },
+    {
+      "path": "gui/renderer/src/components/PipelineView.vue",
       "kind": "source",
       "region": "gui-renderer",
       "layer": "gui"
@@ -393,6 +405,18 @@
       "layer": "gui"
     },
     {
+      "path": "gui/renderer/src/i18n/locales/common-en.ts",
+      "kind": "source",
+      "region": "gui-renderer",
+      "layer": "gui"
+    },
+    {
+      "path": "gui/renderer/src/i18n/locales/common-zh-CN.ts",
+      "kind": "source",
+      "region": "gui-renderer",
+      "layer": "gui"
+    },
+    {
       "path": "gui/renderer/src/i18n/locales/en.ts",
       "kind": "source",
       "region": "gui-renderer",
@@ -454,6 +478,18 @@
     },
     {
       "path": "gui/renderer/src/i18n/locales/inventory-root-state-zh-CN.ts",
+      "kind": "source",
+      "region": "gui-renderer",
+      "layer": "gui"
+    },
+    {
+      "path": "gui/renderer/src/i18n/locales/pipeline-en.ts",
+      "kind": "source",
+      "region": "gui-renderer",
+      "layer": "gui"
+    },
+    {
+      "path": "gui/renderer/src/i18n/locales/pipeline-zh-CN.ts",
       "kind": "source",
       "region": "gui-renderer",
       "layer": "gui"
@@ -1773,6 +1809,12 @@
       "layer": "scripts"
     },
     {
+      "path": "scripts/gui-smoke-pipeline.mjs",
+      "kind": "source",
+      "region": "scripts",
+      "layer": "scripts"
+    },
+    {
       "path": "scripts/gui-smoke-plugin.mjs",
       "kind": "source",
       "region": "scripts",
@@ -2274,6 +2316,13 @@
     },
     {
       "from": "gui/renderer/src/App.vue",
+      "to": "gui/renderer/src/components/ExperienceView.vue",
+      "specifier": "./components/ExperienceView.vue",
+      "from_layer": "gui",
+      "to_layer": "gui"
+    },
+    {
+      "from": "gui/renderer/src/App.vue",
       "to": "gui/renderer/src/components/HostInventoryView.vue",
       "specifier": "./components/HostInventoryView.vue",
       "from_layer": "gui",
@@ -2283,6 +2332,13 @@
       "from": "gui/renderer/src/App.vue",
       "to": "gui/renderer/src/components/InstallDialog.vue",
       "specifier": "./components/InstallDialog.vue",
+      "from_layer": "gui",
+      "to_layer": "gui"
+    },
+    {
+      "from": "gui/renderer/src/App.vue",
+      "to": "gui/renderer/src/components/PipelineView.vue",
+      "specifier": "./components/PipelineView.vue",
       "from_layer": "gui",
       "to_layer": "gui"
     },
@@ -2463,6 +2519,27 @@
     },
     {
       "from": "gui/renderer/src/components/DetailDialog.vue",
+      "to": "gui/renderer/src/types.ts",
+      "specifier": "../types.ts",
+      "from_layer": "gui",
+      "to_layer": "gui"
+    },
+    {
+      "from": "gui/renderer/src/components/ExperienceView.vue",
+      "to": "gui/renderer/src/i18n/error-text.ts",
+      "specifier": "../i18n/error-text.ts",
+      "from_layer": "gui",
+      "to_layer": "gui"
+    },
+    {
+      "from": "gui/renderer/src/components/ExperienceView.vue",
+      "to": "gui/renderer/src/i18n/index.ts",
+      "specifier": "../i18n/index.ts",
+      "from_layer": "gui",
+      "to_layer": "gui"
+    },
+    {
+      "from": "gui/renderer/src/components/ExperienceView.vue",
       "to": "gui/renderer/src/types.ts",
       "specifier": "../types.ts",
       "from_layer": "gui",
@@ -2654,6 +2731,27 @@
       "from": "gui/renderer/src/components/InstallDialog.vue",
       "to": "gui/renderer/src/components/DialogShell.vue",
       "specifier": "./DialogShell.vue",
+      "from_layer": "gui",
+      "to_layer": "gui"
+    },
+    {
+      "from": "gui/renderer/src/components/PipelineView.vue",
+      "to": "gui/renderer/src/i18n/error-text.ts",
+      "specifier": "../i18n/error-text.ts",
+      "from_layer": "gui",
+      "to_layer": "gui"
+    },
+    {
+      "from": "gui/renderer/src/components/PipelineView.vue",
+      "to": "gui/renderer/src/i18n/index.ts",
+      "specifier": "../i18n/index.ts",
+      "from_layer": "gui",
+      "to_layer": "gui"
+    },
+    {
+      "from": "gui/renderer/src/components/PipelineView.vue",
+      "to": "gui/renderer/src/types.ts",
+      "specifier": "../types.ts",
       "from_layer": "gui",
       "to_layer": "gui"
     },
@@ -2897,6 +2995,13 @@
     },
     {
       "from": "gui/renderer/src/i18n/locales/en.ts",
+      "to": "gui/renderer/src/i18n/locales/common-en.ts",
+      "specifier": "./common-en.ts",
+      "from_layer": "gui",
+      "to_layer": "gui"
+    },
+    {
+      "from": "gui/renderer/src/i18n/locales/en.ts",
       "to": "gui/renderer/src/i18n/locales/errors-en.ts",
       "specifier": "./errors-en.ts",
       "from_layer": "gui",
@@ -2931,9 +3036,23 @@
       "to_layer": "gui"
     },
     {
+      "from": "gui/renderer/src/i18n/locales/en.ts",
+      "to": "gui/renderer/src/i18n/locales/pipeline-en.ts",
+      "specifier": "./pipeline-en.ts",
+      "from_layer": "gui",
+      "to_layer": "gui"
+    },
+    {
       "from": "gui/renderer/src/i18n/locales/zh-CN.ts",
       "to": "gui/renderer/src/i18n/locales/audit-zh-CN.ts",
       "specifier": "./audit-zh-CN.ts",
+      "from_layer": "gui",
+      "to_layer": "gui"
+    },
+    {
+      "from": "gui/renderer/src/i18n/locales/zh-CN.ts",
+      "to": "gui/renderer/src/i18n/locales/common-zh-CN.ts",
+      "specifier": "./common-zh-CN.ts",
       "from_layer": "gui",
       "to_layer": "gui"
     },
@@ -2969,6 +3088,13 @@
       "from": "gui/renderer/src/i18n/locales/zh-CN.ts",
       "to": "gui/renderer/src/i18n/locales/inventory-root-state-zh-CN.ts",
       "specifier": "./inventory-root-state-zh-CN.ts",
+      "from_layer": "gui",
+      "to_layer": "gui"
+    },
+    {
+      "from": "gui/renderer/src/i18n/locales/zh-CN.ts",
+      "to": "gui/renderer/src/i18n/locales/pipeline-zh-CN.ts",
+      "specifier": "./pipeline-zh-CN.ts",
       "from_layer": "gui",
       "to_layer": "gui"
     },
@@ -9743,6 +9869,13 @@
     },
     {
       "from": "scripts/gui-smoke.mjs",
+      "to": "scripts/gui-smoke-pipeline.mjs",
+      "specifier": "./gui-smoke-pipeline.mjs",
+      "from_layer": "scripts",
+      "to_layer": "scripts"
+    },
+    {
+      "from": "scripts/gui-smoke.mjs",
       "to": "scripts/gui-smoke-plugin.mjs",
       "specifier": "./gui-smoke-plugin.mjs",
       "from_layer": "scripts",
@@ -9785,10 +9918,10 @@
     }
   ],
   "stats": {
-    "source_files": 314,
+    "source_files": 321,
     "asset_nodes": 1,
-    "nodes": 315,
-    "edges": 1127,
+    "nodes": 322,
+    "edges": 1140,
     "unresolved": 0,
     "cycles": 0,
     "layers": {
@@ -9796,9 +9929,9 @@
       "core": 95,
       "dispatch": 69,
       "entry": 2,
-      "gui": 73,
+      "gui": 79,
       "public": 1,
-      "scripts": 51,
+      "scripts": 52,
       "store": 12
     },
     "outgoing": {
@@ -9806,9 +9939,9 @@
       "core": 346,
       "dispatch": 539,
       "entry": 10,
-      "gui": 147,
+      "gui": 159,
       "public": 6,
-      "scripts": 38,
+      "scripts": 39,
       "store": 22
     },
     "incoming": {
@@ -9816,9 +9949,9 @@
       "core": 403,
       "dispatch": 219,
       "entry": 1,
-      "gui": 147,
+      "gui": 159,
       "public": 1,
-      "scripts": 37,
+      "scripts": 38,
       "store": 300
     },
     "cross_layer_edges": {

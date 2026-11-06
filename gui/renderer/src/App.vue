@@ -16,6 +16,8 @@ import PluginPanel from './components/PluginPanel.vue';
 import PluginInstallDialog from './components/PluginInstallDialog.vue';
 import PluginDetailDialog from './components/PluginDetailDialog.vue';
 import HostInventoryView from './components/HostInventoryView.vue';
+import PipelineView from './components/PipelineView.vue';
+import ExperienceView from './components/ExperienceView.vue';
 import SettingsPanel from './components/SettingsPanel.vue';
 import { useKernel } from './composables/useKernel.ts';
 import { exportInventory } from './composables/useInventoryExport.ts';
@@ -43,10 +45,19 @@ import {
   type UpdateSettings,
 } from './types.ts';
 
-type View = 'dashboard' | 'inventory' | 'validation' | 'backup' | 'plugins' | 'settings';
+type View =
+  | 'dashboard'
+  | 'inventory'
+  | 'validation'
+  | 'backup'
+  | 'plugins'
+  | 'pipeline'
+  | 'experience'
+  | 'settings';
 
 const kernel = useKernel();
 const view = ref<View>('dashboard');
+const experienceFocus = ref<string | null>(null);
 const filterState = ref('');
 const selected = ref<SkillSummary | null>(null);
 const detail = ref<KernelResult | null>(null);
@@ -204,6 +215,21 @@ function usePluginConfigHint(hint: string): void {
     configKey.value = parts[1] ?? '';
     configValue.value = '';
   }
+}
+
+function openExperience(id: string): void {
+  experienceFocus.value = id;
+  view.value = 'experience';
+}
+
+function openExperienceLibrary(): void {
+  experienceFocus.value = null;
+  view.value = 'experience';
+}
+
+function openPipeline(): void {
+  experienceFocus.value = null;
+  view.value = 'pipeline';
 }
 
 /** 写操作的统一入口：预览 → 确认 → 执行，取消时不发写请求 */
@@ -433,6 +459,16 @@ function changeLanguage(mode: LanguageMode, value: SupportedLocale): void {
         >
           {{ $t('nav.inventory') }}
         </button>
+        <button data-nav="pipeline" :class="{ active: view === 'pipeline' }" @click="openPipeline">
+          {{ $t('nav.pipeline') }}
+        </button>
+        <button
+          data-nav="experience"
+          :class="{ active: view === 'experience' }"
+          @click="openExperienceLibrary"
+        >
+          {{ $t('nav.experience') }}
+        </button>
         <button :class="{ active: view === 'settings' }" @click="view = 'settings'">
           {{ $t('nav.settings') }}
         </button>
@@ -454,7 +490,10 @@ function changeLanguage(mode: LanguageMode, value: SupportedLocale): void {
     </aside>
 
     <main>
-      <header v-if="view !== 'inventory'" class="toolbar">
+      <header
+        v-if="view !== 'inventory' && view !== 'pipeline' && view !== 'experience'"
+        class="toolbar"
+      >
         <button class="primary" :disabled="kernel.busy.value" @click="showInstall = true">
           {{ $t('toolbar.installSkill') }}
         </button>
@@ -491,9 +530,13 @@ function changeLanguage(mode: LanguageMode, value: SupportedLocale): void {
           <option value="invalid">{{ $t('toolbar.invalidOnly') }}</option>
         </select>
       </header>
-      <header v-else class="toolbar">
+      <header v-else-if="view === 'inventory'" class="toolbar">
         <strong>{{ $t('inventory.title') }}</strong>
         <span class="muted">{{ $t('app.readOnly') }}</span>
+        <span class="spacer" />
+      </header>
+      <header v-else class="toolbar">
+        <strong>{{ view === 'pipeline' ? $t('pipeline.title') : $t('experience.title') }}</strong>
         <span class="spacer" />
       </header>
 
@@ -511,6 +554,21 @@ function changeLanguage(mode: LanguageMode, value: SupportedLocale): void {
         v-else-if="view === 'inventory'"
         :run="kernel.run"
         :export-inventory="exportInventory"
+      />
+
+      <PipelineView
+        v-else-if="view === 'pipeline'"
+        :run="kernel.run"
+        :busy="kernel.busy.value"
+        :workspace="kernel.workspace.value"
+        @open-experience="openExperience"
+      />
+
+      <ExperienceView
+        v-else-if="view === 'experience'"
+        :run="kernel.run"
+        :busy="kernel.busy.value"
+        :focus-id="experienceFocus"
       />
 
       <section v-else-if="view === 'validation'" class="content">
